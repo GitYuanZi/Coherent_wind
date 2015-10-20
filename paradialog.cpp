@@ -443,7 +443,7 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日�
 
 void paraDialog::on_pushButton_dataFileName_sch_clicked()									//自动查找最小序号
 {
-	QString filter_str = psetting.dataFileName_Prefix + "_ch[12]_";							//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
+	QString filter_str = psetting.dataFileName_Prefix + "_ch[1AB]_";							//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
 	int suffix_l = psetting.dataFileName_Suffix.length();
 	for(int i=0;i<suffix_l;i++)
 		filter_str += "[0123456789]";
