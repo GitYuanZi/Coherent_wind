@@ -38,3 +38,5 @@ RESOURCES += \
     images.qrc
 
 CONFIG    += qwt
+
+RC_ICONS = images\Convert.ico

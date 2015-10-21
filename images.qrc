@@ -7,5 +7,6 @@
         <file>images/start.png</file>
         <file>images/stop.png</file>
         <file>images/update.png</file>
+        <file>images/Convert.ico</file>
     </qresource>
 </RCC>
