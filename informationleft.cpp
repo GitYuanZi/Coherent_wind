@@ -1,4 +1,4 @@
-#include "informationleft.h"
+﻿#include "informationleft.h"
 #include "ui_informationleft.h"
 
 #include <QString>
@@ -25,7 +25,7 @@ void informationleft::set_currentAngle(quint16 a)		//当前角度、圆盘示意
 {
 	currentAngle = a;
 	QString str;
-	str = QString::number(currentAngle) + "°";
+	str = QString::number(currentAngle) + QString::fromLocal8Bit("°");
 	ui->label_currentAngle->setText(str);
 	ui->Compass->setNeedle(new QwtCompassWindArrow(QwtCompassWindArrow::Style2));
 	quint16 b = 360 + 90 - a;

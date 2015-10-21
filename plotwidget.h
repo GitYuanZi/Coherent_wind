@@ -1,4 +1,4 @@
-#ifndef PLOTWIDGET_H
+﻿#ifndef PLOTWIDGET_H
 #define PLOTWIDGET_H
 
 #include <QDialog>
@@ -23,7 +23,7 @@ public:
 	void enableZoomMode(bool);								//缩放模式启用
 	void setMaxX(int xnum);									//x轴参数选择，y轴自动缩放，原始坐标轴值范围设置
     void datashow(const qint16 *dats,uint snum,uint pnum);  //单通道更新数据显示
-	void set_titleUnit(int chname);							//通道名设置
+	void set_titleName(QString ch_name);							//通道名设置
 
 protected:
     void timerEvent(QTimerEvent *);

@@ -1,4 +1,4 @@
-#include "plotwidget.h"
+﻿#include "plotwidget.h"
 
 #include <qwt_counter.h>
 #include <qwt_picker_machine.h>
@@ -126,23 +126,9 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 	}
 }
 
-void PlotWindow::set_titleUnit(int chname)							//设置各通道名
+void PlotWindow::set_titleName(QString ch_name)							//设置各通道名
 {
-	ch_name = chname;
-	switch (ch_name)
-	{
-	case 1:
-		qwtPlot->setTitle(QStringLiteral("ch1"));
-		break;
-	case 2:
-		qwtPlot->setTitle(QStringLiteral("chA"));
-		break;
-	case 3:
-		qwtPlot->setTitle(QStringLiteral("chB"));
-		break;
-	default:
-		break;
-	}
+		qwtPlot->setTitle(ch_name);
 }
 
 void PlotWindow::timerEvent(QTimerEvent *)
