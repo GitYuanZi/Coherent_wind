@@ -81,7 +81,7 @@ void settingFile::readFrom_file(QString a)
 	fsetting.doubleCh = settings.value("doubleCh").toBool();				//双通道
 	fsetting.triggleLevel = settings.value("triggerLevel").toInt();			//触发电平
 	fsetting.sampleFreq = settings.value("sampleFreq").toInt();				//采样频率
-	fsetting.sampleNum = settings.value("sampleNum").toInt();
+	fsetting.sampleNum = settings.value("sampleNum").toInt();				//采样点数
 	fsetting.detRange = settings.value("detRange").toFloat();				//探测距离
 	fsetting.plsAccNum = settings.value("plsAccNum").toInt();				//脉冲数
 	settings.endGroup();
@@ -128,7 +128,7 @@ void settingFile::test_create_file(QString a)
 		settings.setValue("triggerLevel",1);				//触发电平
 		settings.setValue("sampleFreq",550);				//采样频率
 		settings.setValue("detRange",6000);					//探测距离
-		settings.setValue("sampleNum",22000);
+		settings.setValue("sampleNum",22000);				//采样点数
 		settings.setValue("plsAccNum",100);					//脉冲数
 		settings.endGroup();
 
@@ -146,32 +146,32 @@ void settingFile::test_create_file(QString a)
 bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 {
 	ACQSETTING dlgsetting = setting;
-	if(fsetting.laserRPF != dlgsetting.laserRPF)								//激光重频
+	if(fsetting.laserRPF != dlgsetting.laserRPF)					//激光重频
 		return true;
 	qDebug() << "151";
-	if(fsetting.laserPulseWidth != dlgsetting.laserPulseWidth)					//脉冲宽度
+	if(fsetting.laserPulseWidth != dlgsetting.laserPulseWidth)		//脉冲宽度
 		return true;
 	qDebug() << "154";
-	if(fsetting.laserWaveLength != dlgsetting.laserWaveLength)					//激光波长
+	if(fsetting.laserWaveLength != dlgsetting.laserWaveLength)		//激光波长
 		return true;
 	qDebug() << "157";
-	if(fsetting.AOM_Freq != dlgsetting.AOM_Freq)								//AOM移频量
+	if(fsetting.AOM_Freq != dlgsetting.AOM_Freq)					//AOM移频量
 		return true;
 	qDebug() << "160";
 
-	if(fsetting.elevationAngle != dlgsetting.elevationAngle)					//俯仰角
+	if(fsetting.elevationAngle != dlgsetting.elevationAngle)		//俯仰角
 		return true;
 	qDebug() << "164";
-	if(fsetting.start_azAngle != dlgsetting.start_azAngle)						//起始角
+	if(fsetting.start_azAngle != dlgsetting.start_azAngle)			//起始角
 		return true;
 	qDebug() << "167";
-	if(fsetting.step_azAngle != dlgsetting.step_azAngle)						//步进角
+	if(fsetting.step_azAngle != dlgsetting.step_azAngle)			//步进角
 		return true;
 	qDebug() << "170";
-	if(fsetting.angleNum != dlgsetting.angleNum)								//方向数
+	if(fsetting.angleNum != dlgsetting.angleNum)					//方向数
 		return true;
 	qDebug() << "173";
-	if(fsetting.circleNum != dlgsetting.circleNum)								//圆周数
+	if(fsetting.circleNum != dlgsetting.circleNum)					//圆周数
 		return true;
 	qDebug() << "176";
 	if(fsetting.anglekey != dlgsetting.anglekey)
@@ -181,19 +181,19 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 		return true;
 	qDebug() << "182";
 
-	if(fsetting.singleCh != dlgsetting.singleCh)								//单通道
+	if(fsetting.singleCh != dlgsetting.singleCh)					//单通道
 		return true;
 	qDebug() << "186";
-	if(fsetting.doubleCh != dlgsetting.doubleCh)								//双通道
+	if(fsetting.doubleCh != dlgsetting.doubleCh)					//双通道
 		return true;
 	qDebug() << "189";
-	if(fsetting.triggleLevel != dlgsetting.triggleLevel)						//触发电平
+	if(fsetting.triggleLevel != dlgsetting.triggleLevel)			//触发电平
 		return true;
 	qDebug() << "192";
-	if(fsetting.sampleFreq != dlgsetting.sampleFreq)							//采样频率
+	if(fsetting.sampleFreq != dlgsetting.sampleFreq)				//采样频率
 		return true;
 	qDebug() << "195";
-	if(fsetting.detRange != dlgsetting.detRange)								//探测距离
+	if(fsetting.detRange != dlgsetting.detRange)					//探测距离
 		return true;
 	qDebug() << "198";
 	if(fsetting.sampleNum != dlgsetting.sampleNum)
@@ -203,7 +203,7 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 		return true;
 	qDebug() << "204";
 
-	if(fsetting.DatafilePath != dlgsetting.DatafilePath)						//文件保存路径
+	if(fsetting.DatafilePath != dlgsetting.DatafilePath)			//文件保存路径
 		return true;
 	qDebug() << "208";
 	if(fsetting.autocreate_datafile != dlgsetting.autocreate_datafile)			//自动创建日期文件夹

@@ -85,7 +85,7 @@ void MainWindow::creatqwtdock(void)
 		plotWindow_1->setMaxX(mysetting.sampleNum);			//x轴坐标值范围，初始坐标曲线设置
 		plotWindow_1->set_titleName("CH1");						//通道名
 		connect(dockqwt_1,&QDockWidget::topLevelChanged,this,&MainWindow::dockview_ct1);
-															//双击显示全屏绘图
+		//双击显示全屏绘图
 	}
 	else if(mysetting.doubleCh)								//双通道
 	{
@@ -176,10 +176,10 @@ void MainWindow::on_action_saveAs_triggered()				//action_saveAs键
 void MainWindow::on_action_set_triggered()					//action_set键
 {
 	ParaSetDlg = new paraDialog(this);
-//	ParaSetDlg->setAttribute(Qt::WA_DeleteOnClose);	//退出时自动delete，防止内存泄漏
-//	ParaSetDlg->show();
-//	ParaSetDlg->setWindowTitle(QString::fromLocal8Bit("设置"));
-//	ParaSetDlg->setWindowIcon(QIcon(":/images/set"));
+	//	ParaSetDlg->setAttribute(Qt::WA_DeleteOnClose);	//退出时自动delete，防止内存泄漏
+	//	ParaSetDlg->show();
+	//	ParaSetDlg->setWindowTitle(QString::fromLocal8Bit("设置"));
+	//	ParaSetDlg->setWindowIcon(QIcon(":/images/set"));
 
 	ParaSetDlg->init_setting(mysetting);							//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
@@ -253,7 +253,7 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("SampleSkip"));
 		return;
-	}	
+	}
 
 	strs = mysetting.dataFileName_Suffix;			//文件名可自动加1
 	strsuffix =strs.toInt();
@@ -261,7 +261,7 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 
 	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
 	if(mysetting.singleCh)							//单通道采集
-	{			
+	{
 		connect(timer1,SIGNAL(timeout()),this,SLOT(singlecollect()));	//建立定时器并连接函数
 		singleset();
 		singlecollect();
@@ -683,7 +683,7 @@ void MainWindow::doublecollect()								//双通道采集和存储
 
 void MainWindow::conncetdevice()									//查找连接ADQ212设备
 {
-	adq_cu = CreateADQControlUnit();								//用于查找和建立与ADQ设备之间的链接
+	adq_cu = CreateADQControlUnit();								//用于查找和建立与ADQ设备之间的连接
 	qDebug() << "adq_cu = " << adq_cu;
 	int n_of_devices = 0;
 	int n_of_failed = 0;

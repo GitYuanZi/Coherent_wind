@@ -252,13 +252,15 @@ void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
 	{
 		ui->lineEdit_DatafilePath->setStyleSheet("color: red;"
 												 "font-size:16px;"
-												 "font-family:'微软雅黑';");
+												 "font-family:'calibri';"
+												 );
 	}
 	else																			//存在，黑色
 	{
 		ui->lineEdit_DatafilePath->setStyleSheet("color: black;"
 												 "font-size:16px;"
-												 "font-family:'微软雅黑';");
+												 "font-family:'calibri';"
+												 );
 	}
 	psetting.DatafilePath = str;
 	ui->lineEdit_DatafilePath->setText(str);

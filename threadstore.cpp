@@ -1,4 +1,4 @@
-#include "threadstore.h"
+﻿#include "threadstore.h"
 #include <QString>
 #include <QFile>
 #include <QDebug>
@@ -20,9 +20,7 @@ void threadStore::run()
 void threadStore::singleData()
 {
 	QFile outfile1(tsetting.DatafilePath+"/"+tsetting.dataFileName_Prefix+"_ch1_"+collect_filesuffix+".wld");
-//	QDateTime cTime1 = QDateTime::currentDateTime();		//采集开始时间
-//	QString tr1 = cTime1.toString("yyyy/MM/dd hh:mm:ss:zzz");
-//	qDebug() << collect_suffix << tr1;
+
 	if(outfile1.open(QFile::WriteOnly | QIODevice::Truncate))//QIODevice::Truncate表示将原文件内容清空
 	{
 		QDataStream in1(&outfile1);
@@ -51,10 +49,6 @@ void threadStore::singleData()
 		outfile1.close();
 		qDebug() << collect_filesuffix << " has finished!";
 	}
-//	QDateTime cTime2 = QDateTime::currentDateTime();		//采集结束时间
-//	QString tr2 = cTime2.toString("yyyy/MM/dd hh:mm:ss:zzz");
-//	qDebug() << collect_suffix << tr2;
-
 	delete[] data_a;										//删除new分配的内存
 }
 
