@@ -23,11 +23,12 @@ public:
 	void enableZoomMode(bool);								//缩放模式启用
 	void setMaxX(int xnum);									//x轴参数选择，y轴自动缩放，原始坐标轴值范围设置
     void datashow(const qint16 *dats,uint snum,uint pnum);  //单通道更新数据显示
-	void set_titleName(QString ch_name);							//通道名设置
+	void set_titleName(QString ch_name);					//通道名设置
 
 protected:
     void timerEvent(QTimerEvent *);
     void resizeEvent(QResizeEvent *);
+	void keyPressEvent(QKeyEvent *);
 
 private:
     QwtPlot *qwtPlot;
@@ -39,7 +40,6 @@ private:
     QwtPlotZoomer *d_zoomer;
     QwtPlotPanner *d_panner;
 	int ch_name;											//用于设置通道名
-
 	int H_trim;												//曲线显示区域，高度的所见值，形成底部空白，最大化时用于避开windows任务栏
 };
 

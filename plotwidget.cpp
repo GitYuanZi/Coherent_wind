@@ -126,9 +126,13 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 	}
 }
 
-void PlotWindow::set_titleName(QString ch_name)							//设置各通道名
+void PlotWindow::set_titleName(QString ch_name)						//设置各通道名
 {
 		qwtPlot->setTitle(ch_name);
+}
+
+void PlotWindow::keyPressEvent(QKeyEvent *)                         //处理键盘按键时间
+{
 }
 
 void PlotWindow::timerEvent(QTimerEvent *)
