@@ -236,8 +236,6 @@ void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
 	{
 		QStringList file = fd->selectedFiles();
 		QString str = static_cast<QString>(file.at(0));
-		qDebug() << "Here I am" << str;
-
 		if (str.length() == 3)
 			str.resize(2);
 		Set_DatafilePath(str);
@@ -295,7 +293,6 @@ void paraDialog::on_pushButton_save_clicked()										//保存键
 	{
 		if(QFileInfo(profile_path).suffix().isEmpty())
 			profile_path.append(".ini");											//如果无后缀，自动补上.ini
-		qDebug() << "Profile_path = " << profile_path;
 		dlg_setfile.writeTo_file(psetting,profile_path);
 	}
 }
@@ -392,14 +389,11 @@ void paraDialog::update_show()
 
 void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日期文件夹
 {
-	qDebug() << ui->checkBox_autocreate_datafile->isChecked();
 	psetting.autocreate_datafile = ui->checkBox_autocreate_datafile->isChecked();
 	QString str = psetting.DatafilePath;
-	qDebug() << str;
 
 	QDir mypath(str);
 	QString dirname = mypath.dirName();
-	qDebug() << dirname;
 	QDateTime time = QDateTime::currentDateTime();
 
 	if(ui->checkBox_autocreate_datafile->isChecked())
