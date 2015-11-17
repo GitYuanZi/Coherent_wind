@@ -266,7 +266,7 @@ void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
 
 void paraDialog::on_pushButton_sure_clicked()										//确定键
 {
-	if(dlg_setfile.isSettingsChanged(psetting))									//文件未保存时
+	if(dlg_setfile.isSettingsChanged(psetting))										//文件未保存时
 	{
 		QMessageBox::StandardButton reply = QMessageBox::warning(this,QString::fromLocal8Bit("提示"),
 																 QString::fromLocal8Bit("修改的参数未保存，是否要保存修改"),

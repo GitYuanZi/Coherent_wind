@@ -58,6 +58,7 @@
      <string>参数</string>
     </property>
     <addaction name="action_set"/>
+    <addaction name="action_serialport"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="font">
@@ -242,6 +243,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
+   </property>
+  </action>
+  <action name="action_serialport">
+   <property name="text">
+    <string>串口(&amp;P)</string>
+   </property>
+   <property name="toolTip">
+    <string>串口</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
   </action>
  </widget>

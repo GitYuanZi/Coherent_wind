@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -18,7 +19,9 @@ SOURCES += main.cpp\
     informationleft.cpp \
     plotwidget.cpp \
     threadstore.cpp \
-    settingfile.cpp
+    settingfile.cpp \
+    portdialog.cpp \
+    serialportthread.cpp
 
 HEADERS  += mainwindow.h \
     paradialog.h \
@@ -26,11 +29,14 @@ HEADERS  += mainwindow.h \
     informationleft.h \
     plotwidget.h \
     threadstore.h \
-    settingfile.h
+    settingfile.h \
+    portdialog.h \
+    serialportthread.h
 
 FORMS    += mainwindow.ui \
     paradialog.ui \
-    informationleft.ui
+    informationleft.ui \
+    portdialog.ui
 
 win32: LIBS += -LD:/QtProjectFiles/Coherent_wind_lidar02/ -lADQAPI
 

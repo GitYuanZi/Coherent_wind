@@ -9,10 +9,13 @@
 #include "plotwidget.h"
 #include "threadstore.h"
 #include "settingfile.h"
+#include "portdialog.h"
+#include "serialportthread.h"
 
 #include <QByteArray>
 #include <QDataStream>
 #include <QDockWidget>
+#include <QtSerialPort/QSerialPort>
 
 namespace Ui {
 class MainWindow;
@@ -37,14 +40,26 @@ private slots:
 	void on_action_set_triggered();								//设置键
 	void on_action_start_triggered();							//开始键
 	void on_action_stop_triggered();							//停止键
+	void on_action_serialport_triggered();
 
 	void singlecollect(void);									//单通道采集及存储
+	void s_collect_cond();
 	void doublecollect(void);									//双通道采集及存储
 	void collect_over();										//采集结束用于关闭multi-record
+	void receive_response(const QString &s);					//串口线程发送命令后的返回值
 
 private:
     Ui::MainWindow *ui;
     paraDialog *ParaSetDlg;
+	portDialog *PortDialog;									//串口的对话框
+	SerialPortThread thread_coll;								//采集线程
+
+	QSerialPort judge_port;
+	QString portname;											//连接的串口名
+	QString request_send;										//发送给串口的命令
+	volatile bool onecollect_over;								//用于判断单次采集是否完成
+	void search_port_connected();
+
     ACQSETTING mysetting;
 
     settingFile m_setfile;

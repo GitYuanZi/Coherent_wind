@@ -25,10 +25,10 @@ public:
     void updated_filename();
 	void show_detect_mode();								//探测方式
 
-public slots:
-
 	void initial_para();
-    void Set_DatafilePath(QString str);
+	void Set_DatafilePath(QString str);
+
+public slots:
     void on_checkBox_autocreate_datafile_clicked();
 
 private slots:

@@ -131,16 +131,15 @@ void PlotWindow::set_titleName(QString ch_name)						//设置各通道名
 		qwtPlot->setTitle(ch_name);
 }
 
-void PlotWindow::keyPressEvent(QKeyEvent *)                         //处理键盘按键时间
+void PlotWindow::keyPressEvent(QKeyEvent *)                         //处理在键盘按键事件
 {
 }
 
 void PlotWindow::timerEvent(QTimerEvent *)
 {
-
 }
 
-void PlotWindow::resizeEvent(QResizeEvent *)						//绘图窗口大小改变
+void PlotWindow::resizeEvent(QResizeEvent *)						//绘图窗口大小改变时
 {
 	if(height()>=1060)
 		H_trim = 60;
