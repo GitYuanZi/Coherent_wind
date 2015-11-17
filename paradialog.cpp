@@ -387,7 +387,8 @@ void paraDialog::update_show()
 	}
 }
 
-void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日期文件夹
+//自动创建日期文件夹
+void paraDialog::on_checkBox_autocreate_datafile_clicked()
 {
 	psetting.autocreate_datafile = ui->checkBox_autocreate_datafile->isChecked();
 	QString str = psetting.DatafilePath;
@@ -396,7 +397,7 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日�
 	QString dirname = mypath.dirName();
 	QDateTime time = QDateTime::currentDateTime();
 
-	if(ui->checkBox_autocreate_datafile->isChecked())
+	if(psetting.autocreate_datafile)
 	{
 		int num = dirname.toInt();
 		int len = dirname.length();
@@ -415,12 +416,12 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日�
 		{
 			str = mypath.absolutePath();
 			str += QString("/");
-			str += time.toString("yyyyMMdd");												//设置显示格式
+			str += time.toString("yyyyMMdd");			//设置显示格式
 			qDebug()<<"Dir not Match";
 		}
 		qDebug()<<str<<endl;
 	}
-	else																					//取消选择时，如果当前日期路径不存在，则取消，如存在，则不变。
+	else												//取消选择时，如果当前日期路径不存在，则取消，如存在，则不变。
 	{
 		if( dirname == time.toString("yyyyMMdd"))
 		{
@@ -428,7 +429,7 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日�
 			{
 				str = mypath.absolutePath();
 				int str_len = str.length();
-				str.resize(str_len - 9);													//减去/20xxxxxx
+				str.resize(str_len - 9);				//减去/20xxxxxx
 			}
 			qDebug()<<"Dir Match"<<str<<endl;
 		}
@@ -437,9 +438,9 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()									//创建日�
 	Set_DatafilePath(str);
 }
 
-void paraDialog::on_pushButton_dataFileName_sch_clicked()									//自动查找最小序号
+void paraDialog::on_pushButton_dataFileName_sch_clicked()								//自动查找最小序号
 {
-	QString filter_str = psetting.dataFileName_Prefix + "_ch[1AB]_";						//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
+	QString filter_str = psetting.dataFileName_Prefix + "_ch[1AB]_";					//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
 	int suffix_l = psetting.dataFileName_Suffix.length();
 	for(int i=0;i<suffix_l;i++)
 		filter_str += "[0123456789]";
@@ -450,15 +451,15 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()									//自动查找
 	QStringList FN_list;
 	QStringList filter(filter_str);
 
-	QDir *dir = new QDir(psetting.DatafilePath);											// 获取路径下的文件列表
+	QDir *dir = new QDir(psetting.DatafilePath);										// 获取路径下的文件列表
 	dir->setNameFilters(filter);
 
-	QList<QFileInfo> *fileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));			// 设置文件名过滤器
+	QList<QFileInfo> *fileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));		// 设置文件名过滤器
 
-	int file_numbers = fileInfo->count();													//搜索当前最大序号
+	int file_numbers = fileInfo->count();
 	int max_num = 0;
 	int tmp_num = 0;
-	for(int i=0;i<file_numbers;i++)
+	for(int i=0;i<file_numbers;i++)														//搜索当前最大序号
 	{
 		FN_list<<fileInfo->at(i).baseName().right(suffix_l);
 		tmp_num = fileInfo->at(i).baseName().right(suffix_l).toInt();
