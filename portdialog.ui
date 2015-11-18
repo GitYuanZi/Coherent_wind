@@ -164,6 +164,9 @@
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEdit_AC">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>100</x>
@@ -174,6 +177,9 @@
     </property>
    </widget>
    <widget class="QLineEdit" name="lineEdit_DC">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>100</x>

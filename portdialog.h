@@ -16,9 +16,9 @@ public:
 	explicit portDialog(QWidget *parent = 0);
 	~portDialog();
 
-	void inital_data(const QString &c,quint16 a,quint16 b);//默认的设置参数
+	void inital_data(const QString &a,int b);//默认的设置参数
 
-	QString get_returnSet();					//将类型为QString的串口值返回到主线程中
+	int get_returnSet();					//将类型为QString的串口值返回到主线程中
 
 	void search_port();
 
@@ -52,8 +52,7 @@ private:
 	QString dialog_PA;			//绝对距离
 	QString dialog_PX;			//当前位置
 	QString request;
-	quint16 step;
-	quint16 Num;
+	int retSP;
 };
 
 #endif // PORTDIALOG_H

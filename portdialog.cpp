@@ -17,17 +17,10 @@ portDialog::~portDialog()
 	delete ui;
 }
 
-QString portDialog::get_returnSet()
+int portDialog::get_returnSet()
 {
-	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
-	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
-	if(ui->radioButton_CW->isChecked())
-		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
-	else
-		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
-	request = QString("%1%2%3%4BG;").arg(dialog_SP).arg(dialog_AC).arg(dialog_DC).arg(dialog_PR);
-	return request;
+	retSP = ui->lineEdit_SP->text().toInt();
+	return retSP;
 }
 
 void portDialog::search_port()								//搜索串口函数
@@ -39,10 +32,7 @@ void portDialog::search_port()								//搜索串口函数
 		my_serial.close();
 		my_serial.setPortName(info.portName());
 		if(!my_serial.open(QIODevice::ReadWrite))
-		{
-//			qDebug() << "Can't open" << info.portName();
 			return;
-		}
 		my_serial.setBaudRate(QSerialPort::Baud19200);
 		my_serial.setDataBits(QSerialPort::Data8);
 		my_serial.setStopBits(QSerialPort::OneStop);
@@ -63,13 +53,10 @@ void portDialog::search_port()								//搜索串口函数
 				{
 					portTested = info.portName();
 					ui->lineEdit_serialportName->setText(portTested);
+					break;
 				}
 			}
-//			else
-//				qDebug() << "Timeout 1";
 		}
-//		else
-//			qDebug() << "Timeout 2";
 	}
 	my_serial.close();
 	if(portTested == NULL)
@@ -77,16 +64,15 @@ void portDialog::search_port()								//搜索串口函数
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 
-void portDialog::inital_data(const QString &c,quint16 a,quint16 b)			//初始数据函数
+void portDialog::inital_data(const QString &a,int b)		//初始数据函数
 {
-	ui->lineEdit_SP->setText("45");							//速度
-	ui->lineEdit_AC->setText("30");							//加速度
-	ui->lineEdit_DC->setText("30");							//减速度
-	step = a;
-	Num = b;
-	portTested = c;
-	ui->lineEdit_PR->setText(QString::number(step));		//移动距离
-	ui->lineEdit_PA->setText(QString::number(step*Num));	//绝对距离
+	portTested = a;
+	retSP = b;
+	ui->lineEdit_SP->setText(QString::number(b));							//速度
+	ui->lineEdit_AC->setText("180");						//加速度
+	ui->lineEdit_DC->setText("180");						//减速度
+	ui->lineEdit_PR->setText("0");							//移动距离
+	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
 	ui->radioButton_CCW->setChecked(true);					//逆时针
 	ui->lineEdit_serialportName->setText(portTested);
@@ -94,11 +80,11 @@ void portDialog::inital_data(const QString &c,quint16 a,quint16 b)			//初始数
 
 void portDialog::on_pushButton_default_clicked()			//默认键
 {
-	ui->lineEdit_SP->setText("45");							//速度
-	ui->lineEdit_AC->setText("30");							//加速度
-	ui->lineEdit_DC->setText("30");							//减速度
-	ui->lineEdit_PR->setText(QString::number(step));		//移动距离
-	ui->lineEdit_PA->setText(QString::number(step*Num));	//绝对距离
+	ui->lineEdit_SP->setText("90");							//速度
+	ui->lineEdit_AC->setText("180");						//加速度
+	ui->lineEdit_DC->setText("180");						//减速度
+	ui->lineEdit_PR->setText("0");							//移动距离
+	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
 	ui->radioButton_CCW->setChecked(true);					//逆时针
 }
@@ -125,9 +111,9 @@ void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
 	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
 	if(ui->radioButton_CW->isChecked())
-		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
-	else
 		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
+	else
+		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
 	request = QString("%1%2%3%4BG;PX;").arg(dialog_SP).arg(dialog_AC).arg(dialog_DC).arg(dialog_PR);
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
@@ -141,9 +127,9 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
 	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
 	if(ui->radioButton_CW->isChecked())
-		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
-	else
 		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
+	else
+		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
 	request = QString("%1%2%3%4BG;PX;").arg(dialog_SP).arg(dialog_AC).arg(dialog_DC).arg(dialog_PA);
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
