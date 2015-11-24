@@ -46,8 +46,8 @@ private:
 	SerialPortThread thread_dia;
 
 	QString dialog_SP;			//速度
-	QString dialog_AC;			//加速度
-	QString dialog_DC;			//减速度
+//	QString dialog_AC;			//加速度
+//	QString dialog_DC;			//减速度
 	QString dialog_PR;			//移动距离
 	QString dialog_PA;			//绝对距离
 	QString dialog_PX;			//当前位置

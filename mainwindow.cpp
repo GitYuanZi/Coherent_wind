@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	creatqwtdock();														//曲线栏
 	conncetdevice();													//连接采集卡设备
 	search_port();														//串口搜索
+	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
 	SP = 90;															//驱动器速度默认45
 }
 
@@ -218,7 +219,8 @@ void MainWindow::on_action_set_triggered()					//action_set键
 			dockleft_dlg->set_filename2(str2);
 			refresh();
 		}
-		delete ParaSetDlg;							//防止内存泄漏
+		delete ParaSetDlg;											//防止内存泄漏
+		start_position();											//驱动器初始位置
 	}
 	else
 		if(mysetting.singleCh)						//点击非确定键，则删除创建的plotwindow2窗口
@@ -228,12 +230,24 @@ void MainWindow::on_action_set_triggered()					//action_set键
 		}
 }
 
+void MainWindow::start_position()
+{
+	int startAngle = mysetting.start_azAngle*800/3;				//初始角
+	QString start_data = "MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
+	qDebug() << "start_data = " << start_data;					//PA为绝对转动
+	thread_coll.transaction(portname,start_data);				//设定驱动器的初始位置，命令为MO=1;PA= ;BG;
+}
+
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
 {
 	PortDialog = new portDialog(this);
 	PortDialog->inital_data(portname,SP);
 	if (PortDialog->exec() == QDialog::Accepted)
-		SP = PortDialog->get_returnSet();	//从串口对话框接收待发送命令
+	{
+		SP = PortDialog->get_returnSet();					//从串口对话框接收待发送命令
+//		QString sp_str = "SP="+QString::number(SP)+";";
+//		thread_coll.transaction(portname,sp_str);			//设定驱动器的速度
+	}
 }
 
 void MainWindow::path_create()						//数据存储文件夹的创建
@@ -258,6 +272,14 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	path_create();									//数据存储文件夹的创建
 	stopped = false;								//stopped为false。能够采集
 
+	int pr_data = mysetting.step_azAngle*800/3;
+	QString sp_pr_str = "SP="+QString::number(SP)+";MO=1;PR="+QString::number(pr_data)+";";
+	thread_coll.transaction(portname,sp_pr_str);		//设定驱动器的PR、SP值，命令为SP= ;MO=1;PR= ;
+	request_send = "BG;";
+
+	apx=0;											//数组a[]的下标
+	onecollect_over = true;							//采集开始时，该值设定为true
+
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
 	n_sample_skip = 1;								//采样间隔设为1，表示无采样间隔
 	qDebug() << "n_sample_skip = " << n_sample_skip;
@@ -266,13 +288,6 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("SampleSkip"));
 		return;
 	}
-
-	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
-	int startAngle = mysetting.start_azAngle*800/3;	//初始角
-	QString start_data = "MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
-	qDebug() << "start_data = " << start_data;
-	thread_coll.transaction(portname,start_data);	//发送命令给串口线程
-	onecollect_over = true;							//采集开始时，该值设定为true
 
 	strs = mysetting.dataFileName_Suffix;			//文件名可自动加1
 	strsuffix =strs.toInt();
@@ -311,16 +326,26 @@ void MainWindow::receive_response(const QString &s)
 		QString ret1 = retlist.at(1).toLocal8Bit().data();	//获取PX的数值，即串口返回的当前位置值
 		int retData = ret1.toInt();							//ret1值转换为整型
 		qDebug() << "retData = " << retData;
+		a[apx] = retData;
 
-		direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
-		int range = direction_angle*800/3;
-		if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
+		if(apx==1)
 		{
-			if(mysetting.singleCh)
-				singlecollect();
-			else
-				doublecollect();
+			if(a[0] = a[1])									//当两个PX返回值相等，判断是否到达下一组采集位置
+			{
+				direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
+				int range = direction_angle*800/3;
+				if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
+				{
+					if(mysetting.singleCh)
+						singlecollect();
+					else
+						doublecollect();
+				}
+			}
+			apx=0;
 		}
+		else
+			apx++;
 	}
 }
 
@@ -806,4 +831,6 @@ void MainWindow::search_port()									//搜索串口，确定串口名
 	my_serial.close();
 	if(portname == NULL)
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Please connect serialport correctly!"));
+	else
+		start_position();											//驱动器初始位置
 }

@@ -108,13 +108,13 @@ void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 {
 	ui->pushButton_opposite->setEnabled(false);
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
-	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
+//	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
+//	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
 	if(ui->radioButton_CW->isChecked())
 		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
 	else
 		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
-	request = QString("%1%2%3%4BG;PX;").arg(dialog_SP).arg(dialog_AC).arg(dialog_DC).arg(dialog_PR);
+	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PR);
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
 	ui->pushButton_opposite->setEnabled(true);
@@ -124,13 +124,13 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 {
 	ui->pushButton_absolute->setEnabled(false);
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
-	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
+//	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
+//	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
 	if(ui->radioButton_CW->isChecked())
 		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
 	else
 		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
-	request = QString("%1%2%3%4BG;PX;").arg(dialog_SP).arg(dialog_AC).arg(dialog_DC).arg(dialog_PA);
+	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PA);
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
 	ui->pushButton_absolute->setEnabled(true);
@@ -139,7 +139,7 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 {
 	ui->pushButton_setPXis0->setEnabled(false);
-	request = QString("MO=0;PX=%1;BG;").arg(QString::number(int((ui->lineEdit_PX->text().toFloat())*800/3)));
+	request = "MO=0;PX=0;";
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
 	ui->pushButton_setPXis0->setEnabled(true);

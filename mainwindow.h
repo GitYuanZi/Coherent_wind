@@ -27,8 +27,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
-
+	~MainWindow();
 
 private slots:
     void dockview_ct1(bool topLevel);
@@ -58,7 +57,10 @@ private:
 	QString portname;											//连接的串口名
 	QString request_send;										//发送给串口的命令
 	volatile bool onecollect_over;								//用于判断单次采集是否完成
-	void search_port();
+	void search_port();											//串口搜索
+	void start_position();										//驱动器的初始角位置
+	int apx;
+	int a[2];
 
     ACQSETTING mysetting;
 
