@@ -327,22 +327,20 @@ void MainWindow::receive_response(const QString &s)
 		qDebug() << "retData = " << retData;
 		a[apx] = retData;
 
-		if(apx==1)
+		if(a[0] = a[1])									//当两个PX返回值相等，判断是否到达下一组采集位置
 		{
-			if(a[0] = a[1])									//当两个PX返回值相等，判断是否到达下一组采集位置
+			direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
+			int range = direction_angle*800/3;
+			if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
 			{
-				direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
-				int range = direction_angle*800/3;
-				if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
-				{
-					if(mysetting.singleCh)
-						singlecollect();
-					else
-						doublecollect();
-				}
+				if(mysetting.singleCh)
+					singlecollect();
+				else
+					doublecollect();
 			}
-			apx=0;
 		}
+		if(apx==1)
+			apx=0;
 		else
 			apx++;
 	}
