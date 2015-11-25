@@ -91,7 +91,7 @@ void MainWindow::creatqwtdock(void)
 		plotWindow_1->setMaxX(mysetting.sampleNum);			//x轴坐标值范围，初始坐标曲线设置
 		plotWindow_1->set_titleName("CH1");					//通道名
 		connect(dockqwt_1,&QDockWidget::topLevelChanged,this,&MainWindow::dockview_ct1);
-															//双击显示全屏绘图
+		//双击显示全屏绘图
 	}
 	else if(mysetting.doubleCh)								//双通道
 	{
@@ -245,8 +245,8 @@ void MainWindow::on_action_serialport_triggered()			//action_serialport键
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
 		SP = PortDialog->get_returnSet();					//从串口对话框接收待发送命令
-//		QString sp_str = "SP="+QString::number(SP)+";";
-//		thread_coll.transaction(portname,sp_str);			//设定驱动器的速度
+		//		QString sp_str = "SP="+QString::number(SP)+";";
+		//		thread_coll.transaction(portname,sp_str);			//设定驱动器的速度
 	}
 }
 
@@ -277,7 +277,8 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	thread_coll.transaction(portname,sp_pr_str);		//设定驱动器的PR、SP值，命令为SP= ;MO=1;PR= ;
 	request_send = "BG;";
 
-	apx=0;											//数组a[]的下标
+
+	PX0 = 96001;
 	onecollect_over = true;							//采集开始时，该值设定为true
 
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
@@ -326,26 +327,21 @@ void MainWindow::receive_response(const QString &s)
 		QString ret1 = retlist.at(1).toLocal8Bit().data();	//获取PX的数值，即串口返回的当前位置值
 		int retData = ret1.toInt();							//ret1值转换为整型
 		qDebug() << "retData = " << retData;
-		a[apx] = retData;
+		PX1 = retData;
 
-		if(apx==1)
+		if(PX1 == PX0)										//当两个PX返回值相等，判断是否到达下一组采集位置
 		{
-			if(a[0] = a[1])									//当两个PX返回值相等，判断是否到达下一组采集位置
+			direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
+			int range = direction_angle*800/3;
+			if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
 			{
-				direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
-				int range = direction_angle*800/3;
-				if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
-				{
-					if(mysetting.singleCh)
-						singlecollect();
-					else
-						doublecollect();
-				}
+				if(mysetting.singleCh)
+					singlecollect();
+				else
+					doublecollect();
 			}
-			apx=0;
 		}
-		else
-			apx++;
+		PX0 = PX1;
 	}
 }
 
@@ -444,7 +440,7 @@ void MainWindow::singleset()						//单通道参数设置
 void MainWindow::singlecollect()										//单通道采集和存储
 {
 	onecollect_over = false;											//单次采集开始
-//	direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;	//更新左侧栏
+	//	direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;	//更新左侧栏
 	if(direction_angle > 360)
 		direction_angle = direction_angle%360;
 
@@ -801,7 +797,7 @@ void MainWindow::search_port()									//搜索串口，确定串口名
 		my_serial.setPortName(info.portName());
 		if(!my_serial.open(QIODevice::ReadWrite))
 		{
-//			qDebug() << "Can't open" << info.portName();
+			//			qDebug() << "Can't open" << info.portName();
 			return;
 		}
 		my_serial.setBaudRate(QSerialPort::Baud19200);
