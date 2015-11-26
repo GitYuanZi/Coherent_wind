@@ -30,14 +30,17 @@ MainWindow::MainWindow(QWidget *parent) :
 	m_setfile.readFrom_file(paths);										//读取settings.ini文件
 	mysetting = m_setfile.get_setting();								//mysetting获取文件中的参数
 
-	timer1 = new QTimer(this);											//触发各个方向上开始采集
-	timer2 = new QTimer(this);											//用于判断do—while
-	timer2->setSingleShot(true);
 	creatleftdock();													//左侧栏
 	creatqwtdock();														//曲线栏
 	conncetdevice();													//连接采集卡设备
 	search_port();														//串口搜索
 	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
+
+	timer1 = new QTimer(this);											//触发各个方向上开始采集
+	timer2 = new QTimer(this);											//用于判断do—while
+	timer2->setSingleShot(true);
+	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
+	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
 	SP = 90;															//驱动器速度默认45
 }
 
@@ -274,7 +277,7 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 
 	int pr_data = mysetting.step_azAngle*800/3;
 	QString sp_pr_str = "SP="+QString::number(SP)+";MO=1;PR="+QString::number(pr_data)+";";
-	thread_coll.transaction(portname,sp_pr_str);		//设定驱动器的PR、SP值，命令为SP= ;MO=1;PR= ;
+	thread_coll.transaction(portname,sp_pr_str);	//设定驱动器的PR、SP值，命令为SP= ;MO=1;PR= ;
 	request_send = "BG;";
 
 
@@ -294,23 +297,19 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	strsuffix =strs.toInt();
 	numbercollect = 0;
 
-	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
-	qDebug() << "connect timer2";
 	if(mysetting.singleCh)							//单通道采集
 	{
 		singleset();
-		connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));	//定时器连接位置判断函数
 		timer1->start(500);
 	}
 	else											//双通道采集
 	{
 		doubleset();
-		connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));
 		timer1->start(500);
 	}
 }
 
-void MainWindow::collect_cond()					//位置判断函数，利用定时器定时发送命令
+void MainWindow::collect_cond()						//位置判断函数，利用定时器定时发送命令
 {
 	QString judge("PX;");
 	thread_coll.transaction(portname,judge);		//发送PX;接收返回值
