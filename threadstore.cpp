@@ -55,7 +55,7 @@ void threadStore::singleData()
 void threadStore::doubleData()
 {
 	QFile outfileA(tsetting.DatafilePath+"/"+tsetting.dataFileName_Prefix+"_chA_"+collect_filesuffix+".wld");
-	QFile outfileB(tsetting.DatafilePath+"/"+tsetting.dataFileName_Prefix+"_ch1_"+collect_filesuffix+".wld");
+	QFile outfileB(tsetting.DatafilePath+"/"+tsetting.dataFileName_Prefix+"_chB_"+collect_filesuffix+".wld");
 	if(outfileA.open(QFile::WriteOnly | QIODevice::Truncate))//QIODevice::Truncate表示将原文件内容清空
 	{
 		QDataStream inA(&outfileA);

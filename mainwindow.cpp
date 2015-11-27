@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	creatleftdock();													//左侧栏
 	creatqwtdock();														//曲线栏
 	conncetdevice();													//连接采集卡设备
-//	search_port();														//串口搜索
+	//	search_port();														//串口搜索
 	portname = "COM3";
 	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
 
@@ -68,16 +68,16 @@ void MainWindow::creatleftdock(void)
 
 	if(mysetting.singleCh)
 	{
-		QString str = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
-		dockleft_dlg->set_filename1(str);
+		FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
+		dockleft_dlg->set_filename1(FileName_1);
 		dockleft_dlg->set_filename2(NULL);
 	}
 	else
 	{
-		QString str1 = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
-		QString str2 = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
-		dockleft_dlg->set_filename1(str1);
-		dockleft_dlg->set_filename2(str2);
+		FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
+		FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
+		dockleft_dlg->set_filename1(FileName_A);
+		dockleft_dlg->set_filename2(FileName_B);
 	}
 }
 
@@ -210,21 +210,20 @@ void MainWindow::on_action_set_triggered()					//action_set键
 		dockleft_dlg->set_groupcnt(0);
 		if(mysetting.singleCh)
 		{
-			QString str = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
-			dockleft_dlg->set_filename1(str);
+			FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
+			dockleft_dlg->set_filename1(FileName_1);
 			dockleft_dlg->set_filename2(NULL);
-			refresh();												//更新绘图窗口
 		}
 		else
 		{
-			QString str1 = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
-			QString str2 = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
-			dockleft_dlg->set_filename1(str1);
-			dockleft_dlg->set_filename2(str2);
-			refresh();
+			FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
+			FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
+			dockleft_dlg->set_filename1(FileName_A);
+			dockleft_dlg->set_filename2(FileName_B);
 		}
-		delete ParaSetDlg;											//防止内存泄漏
-//		start_position();											//驱动器初始位置
+		refresh();												//更新绘图窗口
+		delete ParaSetDlg;										//防止内存泄漏
+		//		start_position();								//驱动器初始位置
 	}
 	else
 		if(mysetting.singleCh)						//点击非确定键，则删除创建的plotwindow2窗口
@@ -288,8 +287,8 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 		return;
 	}
 
-	strs = mysetting.dataFileName_Suffix;			//文件名可自动加1
-	strsuffix =strs.toInt();
+	//	strs = mysetting.dataFileName_Suffix;			//文件名可自动加1
+	//	strsuffix =strs.toInt();
 	numbercollect = 0;
 
 	if(mysetting.singleCh)							//单通道采集
@@ -439,11 +438,6 @@ void MainWindow::singlecollect()										//单通道采集和存储
 
 	dockleft_dlg->set_currentAngle(direction_angle);
 	dockleft_dlg->set_groupcnt(numbercollect+1);
-	strs = QString::number(strsuffix,10);								//更新采集文件的后缀序号
-
-	QString str = mysetting.dataFileName_Prefix + "_ch1_" + strs + ".wld";
-	dockleft_dlg->set_filename1(str);
-	dockleft_dlg->set_filename2(NULL);									//更新文件名
 
 	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)								//解除触发，内存计数重置Disarm unit
 	{
@@ -508,7 +502,7 @@ void MainWindow::singlecollect()										//单通道采集和存储
 	if(!threadA.isRunning())
 	{
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
-		threadA.otherpara(strs,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
+		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.s_memcpy(rd_data1);							//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
 	}
@@ -516,7 +510,7 @@ void MainWindow::singlecollect()										//单通道采集和存储
 		if(!threadB.isRunning())
 		{
 			threadB.fileDataPara(mysetting);
-			threadB.otherpara(strs,timestr,direction_angle);
+			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.s_memcpy(rd_data1);
 			threadB.start();
 		}
@@ -524,14 +518,14 @@ void MainWindow::singlecollect()										//单通道采集和存储
 			if(!threadC.isRunning())
 			{
 				threadC.fileDataPara(mysetting);
-				threadC.otherpara(strs,timestr,direction_angle);
+				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.s_memcpy(rd_data1);
 				threadC.start();
 			}
 			else
 			{
 				threadD.fileDataPara(mysetting);
-				threadD.otherpara(strs,timestr,direction_angle);
+				threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadD.s_memcpy(rd_data1);
 				threadD.start();
 			}
@@ -539,7 +533,18 @@ void MainWindow::singlecollect()										//单通道采集和存储
 	plotWindow_1->datashow(rd_data1,mysetting.sampleNum,mysetting.plsAccNum);		//绘图窗口显示最后一组脉冲
 	delete[] rd_data1;
 
-	strsuffix++;
+	int filenumber = mysetting.dataFileName_Suffix.toInt();
+	int len = mysetting.dataFileName_Suffix.length();
+	filenumber++ ;
+	if(len<=8)
+	{
+		mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
+		mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
+	}
+	FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
+	dockleft_dlg->set_filename1(FileName_1);
+	dockleft_dlg->set_filename2(NULL);								//更新文件名
+
 	numbercollect++;												//下一组采集组数
 	if((numbercollect >= mysetting.angleNum)||(stopped == true))	//判断是否完成设置组数
 		collect_over();
@@ -635,12 +640,6 @@ void MainWindow::doublecollect()								//双通道采集和存储
 		direction_angle = direction_angle%360;
 	dockleft_dlg->set_currentAngle(direction_angle);
 	dockleft_dlg->set_groupcnt(numbercollect+1);
-	strs = QString::number(strsuffix,10);
-
-	QString strA = mysetting.dataFileName_Prefix + "_chA_" + strs + ".wld";
-	QString strB = mysetting.dataFileName_Prefix + "_chB_" + strs + ".wld";
-	dockleft_dlg->set_filename1(strA);
-	dockleft_dlg->set_filename2(strB);
 
 	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)
 	{
@@ -712,7 +711,7 @@ void MainWindow::doublecollect()								//双通道采集和存储
 	if(!threadA.isRunning())
 	{
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
-		threadA.otherpara(strs,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
+		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.d_memcpy(rd_dataa,rd_datab);				//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
 	}
@@ -720,7 +719,7 @@ void MainWindow::doublecollect()								//双通道采集和存储
 		if(!threadB.isRunning())
 		{
 			threadB.fileDataPara(mysetting);
-			threadB.otherpara(strs,timestr,direction_angle);
+			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.d_memcpy(rd_dataa,rd_datab);
 			threadB.start();
 		}
@@ -728,14 +727,14 @@ void MainWindow::doublecollect()								//双通道采集和存储
 			if(!threadC.isRunning())
 			{
 				threadC.fileDataPara(mysetting);
-				threadC.otherpara(strs,timestr,direction_angle);
+				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.d_memcpy(rd_dataa,rd_datab);
 				threadC.start();
 			}
 			else
 			{
 				threadD.fileDataPara(mysetting);
-				threadD.otherpara(strs,timestr,direction_angle);
+				threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadD.d_memcpy(rd_dataa,rd_datab);
 				threadD.start();
 			}
@@ -744,9 +743,20 @@ void MainWindow::doublecollect()								//双通道采集和存储
 	plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示b最后一组脉冲
 	delete[] rd_datab;
 
-	strsuffix++;
-	numbercollect++;
+	int filenumber = mysetting.dataFileName_Suffix.toInt();
+	int len = mysetting.dataFileName_Suffix.length();
+	filenumber++ ;
+	if(len<=8)
+	{
+		mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
+		mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
+	}
+	FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
+	FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
+	dockleft_dlg->set_filename1(FileName_A);
+	dockleft_dlg->set_filename2(FileName_B);
 
+	numbercollect++;
 	if((numbercollect >= mysetting.angleNum)||(stopped == true))	//判断是否完成设置组数
 		collect_over();
 	onecollect_over = true;

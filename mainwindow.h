@@ -78,36 +78,38 @@ private:
 	void refresh(void);								//设置完后关于绘图部分更新
 	void resizeEvent(QResizeEvent *event);			//主窗口大小改变时
 
-	QTimer *timer1;									//通道定时器
-	QTimer *timer2;									//判断定时器
-	void singleset(void);							//单通道参数设置
-	void doubleset(void);							//双通道参数设置
+	QTimer *timer1;				//通道定时器
+	QTimer *timer2;				//判断定时器
+	void singleset(void);		//单通道参数设置
+	void doubleset(void);		//双通道参数设置
 
-	threadStore threadA;							//数据储存线程
+	threadStore threadA;		//数据储存线程
     threadStore threadB;
     threadStore threadC;
     threadStore threadD;
 
-	QString strs;									//文件名可自动加1
-    int strsuffix;
-	int numbercollect;								//采集方向组数
-	volatile bool stopped;							//用于判断是否点击了停止采集
+	QString FileName_1;			//完整文件名
+	QString FileName_A;
+	QString FileName_B;
 
-	QString timestr;								//采集时间
-	uint direction_angle;							//方位角
+	int numbercollect;			//采集方向组数
+	volatile bool stopped;		//用于判断是否点击了停止采集
+
+	QString timestr;			//采集时间
+	uint direction_angle;		//方位角
     void *adq_cu;
-    int trig_mode;
-    int trig_level;
-    int trig_flank;
-    int trig_channel;
+	int trig_mode;				//触发模式
+	int trig_level;				//触发电平
+	int trig_flank;				//触发边沿
+	int trig_channel;			//触发通道
     int clock_source ;
-	int pll_divider;								//和采样频率有关
-	unsigned int number_of_records;					//脉冲数
-	unsigned int samples_per_record;				//采样点
+	int pll_divider;					//PLL分频数，和采样频率有关
+	unsigned int number_of_records;		//脉冲数
+	unsigned int samples_per_record;	//采样点
     unsigned int n_sample_skip;
 
-	void conncetdevice(void);						//连接设备
-	void path_create();								//数据存储文件夹的创建
+	void conncetdevice(void);			//连接USB采集卡设备
+	void path_create();					//数据存储文件夹的创建
 };
 
 #endif // MAINWINDOW_H
