@@ -33,7 +33,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	creatleftdock();													//左侧栏
 	creatqwtdock();														//曲线栏
 	conncetdevice();													//连接采集卡设备
-	search_port();														//串口搜索
+//	search_port();														//串口搜索
+	portname = "COM3";
 	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
 
 	timer1 = new QTimer(this);											//触发各个方向上开始采集
@@ -223,7 +224,7 @@ void MainWindow::on_action_set_triggered()					//action_set键
 			refresh();
 		}
 		delete ParaSetDlg;											//防止内存泄漏
-		start_position();											//驱动器初始位置
+//		start_position();											//驱动器初始位置
 	}
 	else
 		if(mysetting.singleCh)						//点击非确定键，则删除创建的plotwindow2窗口
@@ -236,9 +237,9 @@ void MainWindow::on_action_set_triggered()					//action_set键
 void MainWindow::start_position()
 {
 	int startAngle = mysetting.start_azAngle*800/3;				//初始角
-	QString start_data = "MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
+	QString start_data = "SP="+QString::number(SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
 	qDebug() << "start_data = " << start_data;					//PA为绝对转动
-	thread_coll.transaction(portname,start_data);				//设定驱动器的初始位置，命令为MO=1;PA= ;BG;
+	thread_coll.transaction(portname,start_data);				//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
 }
 
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
@@ -246,11 +247,7 @@ void MainWindow::on_action_serialport_triggered()			//action_serialport键
 	PortDialog = new portDialog(this);
 	PortDialog->inital_data(portname,SP);
 	if (PortDialog->exec() == QDialog::Accepted)
-	{
 		SP = PortDialog->get_returnSet();					//从串口对话框接收待发送命令
-		//		QString sp_str = "SP="+QString::number(SP)+";";
-		//		thread_coll.transaction(portname,sp_str);			//设定驱动器的速度
-	}
 }
 
 void MainWindow::path_create()						//数据存储文件夹的创建
@@ -275,11 +272,9 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	path_create();									//数据存储文件夹的创建
 	stopped = false;								//stopped为false。能够采集
 
+	start_position();								//驱动器初始位置
 	int pr_data = mysetting.step_azAngle*800/3;
-	QString sp_pr_str = "SP="+QString::number(SP)+";MO=1;PR="+QString::number(pr_data)+";";
-	thread_coll.transaction(portname,sp_pr_str);	//设定驱动器的PR、SP值，命令为SP= ;MO=1;PR= ;
-	request_send = "BG;";
-
+	request_send = "PR="+QString::number(pr_data)+";BG;";//设定驱动器的PR值，命令为PR= ;BG;
 
 	PX0 = 96001;
 	onecollect_over = true;							//采集开始时，该值设定为true
@@ -439,7 +434,6 @@ void MainWindow::singleset()						//单通道参数设置
 void MainWindow::singlecollect()										//单通道采集和存储
 {
 	onecollect_over = false;											//单次采集开始
-	//	direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;	//更新左侧栏
 	if(direction_angle > 360)
 		direction_angle = direction_angle%360;
 
@@ -787,7 +781,7 @@ void MainWindow::conncetdevice()									//查找连接ADQ212设备
 	}
 }
 
-void MainWindow::search_port()									//搜索串口，确定串口名
+void MainWindow::search_port()										//搜索串口，确定串口名
 {
 	QSerialPort my_serial;
 	foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
@@ -796,7 +790,6 @@ void MainWindow::search_port()									//搜索串口，确定串口名
 		my_serial.setPortName(info.portName());
 		if(!my_serial.open(QIODevice::ReadWrite))
 		{
-			//			qDebug() << "Can't open" << info.portName();
 			return;
 		}
 		my_serial.setBaudRate(QSerialPort::Baud19200);
@@ -824,8 +817,7 @@ void MainWindow::search_port()									//搜索串口，确定串口名
 		}
 	}
 	my_serial.close();
+	qDebug() << "portName = " << portname;
 	if(portname == NULL)
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Please connect serialport correctly!"));
-	else
-		start_position();											//驱动器初始位置
 }

@@ -53,7 +53,6 @@ void portDialog::search_port()								//搜索串口函数
 				{
 					portTested = info.portName();
 					ui->lineEdit_serialportName->setText(portTested);
-					break;
 				}
 			}
 		}
@@ -139,7 +138,7 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 {
 	ui->pushButton_setPXis0->setEnabled(false);
-	request = "MO=0;PX=0;";
+	request = "MO=0;PX=0;MO=1;";
 	qDebug() << "request = " << request;
 	thread_dia.transaction(portTested,request);
 	ui->pushButton_setPXis0->setEnabled(true);
