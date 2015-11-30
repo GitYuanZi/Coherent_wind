@@ -16,11 +16,13 @@ public:
 	explicit portDialog(QWidget *parent = 0);
 	~portDialog();
 
-	void inital_data(const QString &a,int b);//默认的设置参数
+	void inital_data(const QString &a,int b, bool c,int d);//默认的设置参数
 
 	int get_returnSet();					//将类型为QString的串口值返回到主线程中
 
 	void search_port();
+
+	bool get_returnMotor_connect();			//返回连接电机的bool值给主程序
 
 private slots:
 //	void opposite_transaction();				//相对转动
@@ -52,7 +54,9 @@ private:
 	QString dialog_PA;			//绝对距离
 	QString dialog_PX;			//当前位置
 	QString request;
-	int retSP;
+	int retSP;					//返回给主程序的SP值
+	bool HoldOff;				//是否连接电机
+	int col_num;				//采集的组数
 };
 
 #endif // PORTDIALOG_H

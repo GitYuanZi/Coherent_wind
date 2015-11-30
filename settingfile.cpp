@@ -40,6 +40,7 @@ void settingFile::writeTo_file(const ACQSETTING &setting,QString a )
 	settings.setValue("singleCh",fsetting.singleCh);					//单通道
 	settings.setValue("doubleCh",fsetting.doubleCh);					//双通道
 	settings.setValue("triggerLevel",fsetting.triggleLevel);			//触发电平
+	settings.setValue("triggerHoldOffSamples",fsetting.triggerHoldOffSamples);//触发延迟
 	settings.setValue("sampleFreq",fsetting.sampleFreq);				//采样频率
 	settings.setValue("detRange",fsetting.detRange);					//探测距离
 	settings.setValue("sampleNum",fsetting.sampleNum);
@@ -78,6 +79,7 @@ void settingFile::readFrom_file(QString a)
 	fsetting.singleCh = settings.value("singleCh").toBool();				//单通道
 	fsetting.doubleCh = settings.value("doubleCh").toBool();				//双通道
 	fsetting.triggleLevel = settings.value("triggerLevel").toInt();			//触发电平
+	fsetting.triggerHoldOffSamples = settings.value("triggerHoldOffSamples").toInt();//触发延迟
 	fsetting.sampleFreq = settings.value("sampleFreq").toInt();				//采样频率
 	fsetting.sampleNum = settings.value("sampleNum").toInt();				//采样点数
 	fsetting.detRange = settings.value("detRange").toFloat();				//探测距离
@@ -124,6 +126,7 @@ void settingFile::test_create_file(QString a)
 		settings.setValue("singleCh",true);					//单通道
 		settings.setValue("doubleCh",false);				//双通道
 		settings.setValue("triggerLevel",1);				//触发电平
+		settings.setValue("triggerHoldOffSamples",500);		//触发延迟
 		settings.setValue("sampleFreq",550);				//采样频率
 		settings.setValue("detRange",6000);					//探测距离
 		settings.setValue("sampleNum",22000);				//采样点数
@@ -173,6 +176,8 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 	if(fsetting.doubleCh != dlgsetting.doubleCh)					//双通道
 		return true;
 	if(fsetting.triggleLevel != dlgsetting.triggleLevel)			//触发电平
+		return true;
+	if(fsetting.triggerHoldOffSamples != dlgsetting.triggerHoldOffSamples)//触发延迟
 		return true;
 	if(fsetting.sampleFreq != dlgsetting.sampleFreq)				//采样频率
 		return true;

@@ -23,6 +23,7 @@ typedef struct
     bool singleCh;
     bool doubleCh;
     quint16 triggleLevel;
+	quint16 triggerHoldOffSamples;
     quint16 sampleFreq;
     quint32 sampleNum;
     float detRange;

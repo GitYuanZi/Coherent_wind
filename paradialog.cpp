@@ -24,11 +24,12 @@ paraDialog::~paraDialog()
 	delete ui;
 }
 
-void paraDialog::init_setting(const ACQSETTING &setting)
+void paraDialog::init_setting(const ACQSETTING &setting, int b)
 {
 	psetting = setting;
 	defaulsetting = setting;
 	dlg_setfile.init_fsetting(psetting);						//把psetting传递给fsetting
+	dlg_SP = b;													//SP值
 }
 
 void paraDialog::initial_para()
@@ -37,8 +38,8 @@ void paraDialog::initial_para()
 
 	connect(ui->lineEdit_elevationAngle,&QLineEdit::textChanged,this,&paraDialog::set_elevationAngle);			//俯仰角 -> 探测方式
 	connect(ui->lineEdit_step_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_step_azAngle);				//步进角 -> 探测方式
-	connect(ui->lineEdit_step_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_circleNum);					//步进角 -> 方向数
-	connect(ui->lineEdit_step_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_angleNum);					//步进角 -> 圆周数
+	connect(ui->lineEdit_step_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_circleNum);					//步进角 -> 圆周数
+	connect(ui->lineEdit_step_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_angleNum);					//步进角 -> 方向数
 
 	connect(ui->lineEdit_circleNum, &QLineEdit::textChanged,this,&paraDialog::set_angleNum);					//圆周数 -> 方向数
 	connect(ui->lineEdit_angleNum,&QLineEdit::textChanged,this,&paraDialog::set_circleNum);						//方向数 -> 圆周数
@@ -58,6 +59,7 @@ void paraDialog::initial_para()
 	connect(ui->lineEdit_AOM_Freq,&QLineEdit::textChanged,this,&paraDialog::set_AOM_Freq);						//AOM移频量
 	connect(ui->lineEdit_start_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_start_azAngle);			//起始角
 	connect(ui->lineEdit_triggerLevel,&QLineEdit::textChanged,this,&paraDialog::set_triggerLevel);				//触发电平
+	connect(ui->lineEdit_triggerHoldOffSamples,&QLineEdit::textChanged,this,&paraDialog::set_triggerHoldOffSamples);//触发延迟
 
 	connect(ui->lineEdit_sampleNum,&QLineEdit::textChanged,this,&paraDialog::set_filesize);						//采样点数
 }
@@ -74,9 +76,11 @@ void paraDialog::set_step_azAngle()													//步进角 是否为0决定是�
 	show_detect_mode();
 
 	if(psetting.step_azAngle == 0)
-		ui->groupBox_2->setEnabled(false);											//扫描探测
+	{
+		ui->groupBox_2->setEnabled(false);
+	}
 	else
-		ui->groupBox_2->setEnabled(true);
+		ui->groupBox_2->setEnabled(true);											//扫描探测
 }
 
 //设置方向数输入框的显示数值
@@ -92,7 +96,9 @@ void paraDialog::set_angleNum()														//方向数 决定圆周数，影�
 		ui->lineEdit_angleNum->setText(QString::number(psetting.angleNum));
 	}
 
-	ui->lineEdit_totalTime->setText(QString::number(10*psetting.angleNum));			//总时间
+	if(psetting.step_azAngle == 0)													//步进角为0时为单方向探测，方向数为1
+		psetting.angleNum = 1;
+	set_dect_time();																//预估时间
 	if(ui->radioButton_singleCh->isChecked())										//总数据量
 		ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
 	else
@@ -134,6 +140,7 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 	psetting.singleCh = true;
 	psetting.doubleCh = false;
 	ui->lineEdit_triggerLevel->setEnabled(true);
+	ui->lineEdit_triggerHoldOffSamples->setEnabled(false);							//触发延迟
 	updates_filename();
 	ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
 	ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
@@ -144,6 +151,7 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 	psetting.singleCh = false;
 	psetting.doubleCh = true;
 	ui->lineEdit_triggerLevel->setEnabled(false);
+	ui->lineEdit_triggerHoldOffSamples->setEnabled(true);							//触发延迟
 	updated_filename();
 	ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
 	ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
@@ -186,6 +194,7 @@ void paraDialog::set_plsAccNum()													//脉冲数影响单文件量、总
 	psetting.plsAccNum = ui->lineEdit_plsAccNum->text().toInt();
 	direct_size = 48+psetting.plsAccNum*psetting.sampleNum*2;
 	set_filesize();
+	set_dect_time();																//预估时间
 }
 
 void paraDialog::set_dataFileName_Suffix()											//文件的后缀名
@@ -200,6 +209,7 @@ void paraDialog::set_dataFileName_Suffix()											//文件的后缀名
 void paraDialog::set_laserRPF()														//psetting获取编辑框值
 {
 	psetting.laserRPF = ui->lineEdit_laserRPF->text().toInt();
+	set_dect_time();																//预估时间
 }
 
 void paraDialog::set_laserPulseWidth()												//psetting获取编辑框值
@@ -225,6 +235,11 @@ void paraDialog::set_start_azAngle()												//psetting获取编辑框值
 void paraDialog::set_triggerLevel()													//psetting获取编辑框值
 {
 	psetting.triggleLevel = ui->lineEdit_triggerLevel->text().toInt();
+}
+
+void paraDialog::set_triggerHoldOffSamples()										//psetting获取触发延迟编辑框中的值
+{
+	psetting.triggerHoldOffSamples = ui->lineEdit_triggerHoldOffSamples->text().toInt();
 }
 
 void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
@@ -338,6 +353,7 @@ void paraDialog::update_show()
 	ui->radioButton_singleCh->setChecked(psetting.singleCh);
 	ui->radioButton_doubleCh->setChecked(psetting.doubleCh);
 	ui->lineEdit_triggerLevel->setText(QString::number(psetting.triggleLevel));
+	ui->lineEdit_triggerHoldOffSamples->setText(QString::number(psetting.triggerHoldOffSamples));
 	ui->comboBox_sampleFreq->setCurrentText(QString::number(psetting.sampleFreq));
 	ui->lineEdit_detRange->setText(QString::number(psetting.detRange/1000));
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));					//初始采样点数
@@ -364,7 +380,7 @@ void paraDialog::update_show()
 			ui->lineEdit_angleNum->setEnabled(false);
 		}
 	}
-	ui->lineEdit_totalTime->setText(QString::number(psetting.angleNum*10));					//初始探测时间
+	set_dect_time();																//预估时间
 
 	QDateTime time = QDateTime::currentDateTime();
 	psetting.dataFileName_Prefix = time.toString("yyyyMMdd");
@@ -374,6 +390,7 @@ void paraDialog::update_show()
 	if(ui->radioButton_singleCh->isChecked())
 	{
 		ui->lineEdit_triggerLevel->setEnabled(true);
+		ui->lineEdit_triggerHoldOffSamples->setEnabled(false);
 		updates_filename();
 		ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
 		ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
@@ -381,6 +398,7 @@ void paraDialog::update_show()
 	else
 	{
 		ui->lineEdit_triggerLevel->setEnabled(false);
+		ui->lineEdit_triggerHoldOffSamples->setEnabled(true);
 		updated_filename();
 		ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
 		ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
@@ -504,4 +522,40 @@ void paraDialog::updated_filename()
 	ui->lineEdit_dataFileName_ch1->setText(NULL);
 	ui->lineEdit_dataFileName_chA->setText(psetting.dataFileName_Prefix + "_chA_" + psetting.dataFileName_Suffix + ".wld");
 	ui->lineEdit_dataFileName_chB->setText(psetting.dataFileName_Prefix + "_chB_" + psetting.dataFileName_Suffix + ".wld");
+}
+
+void paraDialog::set_dect_time()												//计算探测时间
+{
+	int time_need = (float)psetting.plsAccNum*psetting.angleNum/psetting.laserRPF+(psetting.angleNum-1)*(float)(dlg_SP*800/3)/96000;
+	if(time_need < 1)
+		ui->lineEdit_totalTime->setText("<1s");									//在1s以下
+	else
+		if(time_need < 60)														//在1min以下
+			ui->lineEdit_totalTime->setText(QString::number(time_need)+"s");
+		else
+			if(time_need < 3600)												//在1h以下
+			{
+				int m = time_need/60;
+				int s = time_need%60;
+				if(s == 0)
+					ui->lineEdit_totalTime->setText(QString::number(m)+"min");	//无秒
+				else
+					ui->lineEdit_totalTime->setText(QString::number(m)+"min"+QString::number(s)+"s");
+			}
+			else																//在1h以上
+				{
+					int h = time_need/3600;
+					int remain = time_need%3600;
+					if(remain == 0)
+						ui->lineEdit_totalTime->setText(QString::number(h)+"h");//无分无秒
+					else
+					{
+						int m = remain/60;
+						int s = remain%60;
+						if(s == 0)
+							ui->lineEdit_totalTime->setText(QString::number(h)+"h"+QString::number(m)+"m");//无秒
+						else
+							ui->lineEdit_totalTime->setText(QString::number(h)+"h"+QString::number(m)+"m"+QString::number(s)+"s");
+					}
+				}
 }

@@ -17,7 +17,7 @@ public:
     explicit paraDialog(QWidget *parent = 0);
     ~paraDialog();
 
-    void init_setting(const ACQSETTING &setting);
+	void init_setting(const ACQSETTING &setting, int b);
     ACQSETTING get_setting(void);
     void update_show();
 															//参考信息显示
@@ -49,6 +49,7 @@ private slots:
 	void set_singleCh();
 	void set_doubleCh();
 	void set_triggerLevel();
+	void set_triggerHoldOffSamples();
     void set_sampleFreq();
 	void set_detRange();
 	void set_plsAccNum();
@@ -72,6 +73,9 @@ private:
 	int sampleNum;												//单个脉冲的采样点数
 	settingFile dlg_setfile;
 	QString profile_path;										//配置文件路径
+
+	int dlg_SP;													//SP值
+	void set_dect_time();										//计算预估探测时间
 };
 
 #endif // PARADIALOG_H

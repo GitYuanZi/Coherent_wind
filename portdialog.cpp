@@ -17,10 +17,16 @@ portDialog::~portDialog()
 	delete ui;
 }
 
-int portDialog::get_returnSet()
+int portDialog::get_returnSet()								//返回SP值给主程序
 {
 	retSP = ui->lineEdit_SP->text().toInt();
 	return retSP;
+}
+
+bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主程序
+{
+	HoldOff = ui->checkBox_motor_connected->isChecked();
+	return HoldOff;
 }
 
 void portDialog::search_port()								//搜索串口函数
@@ -63,29 +69,37 @@ void portDialog::search_port()								//搜索串口函数
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 
-void portDialog::inital_data(const QString &a,int b)		//初始数据函数
+void portDialog::inital_data(const QString &a,int b, bool c, int d)//初始数据函数
 {
 	portTested = a;
 	retSP = b;
-	ui->lineEdit_SP->setText(QString::number(b));							//速度
+	HoldOff = c;
+	col_num = d;
+	ui->lineEdit_serialportName->setText(portTested);		//串口名
+	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
+	ui->radioButton_CCW->setChecked(true);					//逆时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
-	ui->radioButton_CCW->setChecked(true);					//逆时针
-	ui->lineEdit_serialportName->setText(portTested);
+	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
+	if(!(col_num == 1))
+		ui->groupBox_motor->setEnabled(false);
 }
 
 void portDialog::on_pushButton_default_clicked()			//默认键
 {
-	ui->lineEdit_SP->setText("90");							//速度
+	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
+	ui->radioButton_CCW->setChecked(true);					//逆时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
-	ui->radioButton_CCW->setChecked(true);					//逆时针
+	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
+	if(!(col_num == 1))
+		ui->groupBox_motor->setEnabled(false);
 }
 
 void portDialog::on_pushButton_sure_clicked()				//确定键

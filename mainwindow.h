@@ -60,6 +60,7 @@ private:
 	void search_port();								//串口搜索
 	void start_position();							//驱动器的初始角位置
 	int PX0, PX1;									//驱动器返回的PX值
+	bool trig_HoldOff;								//该值为真，表示连接电机
 
     ACQSETTING mysetting;
 
