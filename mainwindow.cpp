@@ -39,6 +39,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&thread_coll, SIGNAL(portOpen()),this,SLOT(receive_portopen()));//连接串口未打开时对应的槽函数
 	connect(&thread_coll, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
 
+	PortDialog = new portDialog(this);
+	connect(PortDialog,SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
+
 	timer1 = new QTimer(this);											//触发各个方向上开始采集
 	timer2 = new QTimer(this);											//用于判断do—while
 	timer2->setSingleShot(true);
@@ -196,7 +199,7 @@ void MainWindow::on_action_set_triggered()					//action_set键
 	//	ParaSetDlg->setWindowTitle(QString::fromLocal8Bit("设置"));
 	//	ParaSetDlg->setWindowIcon(QIcon(":/images/set"));
 
-	ParaSetDlg->init_setting(mysetting,SP,stopped);							//mysetting传递给设置窗口psetting
+	ParaSetDlg->init_setting(mysetting,SP,stopped);					//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
 	ParaSetDlg->on_checkBox_autocreate_datafile_clicked();			//更新文件存储路径
 
@@ -227,15 +230,15 @@ void MainWindow::on_action_set_triggered()					//action_set键
 			dockleft_dlg->set_filename2(FileName_B);
 		}
 		refresh();												//更新绘图窗口
-		delete ParaSetDlg;										//防止内存泄漏
 		//		start_position();								//驱动器初始位置
 	}
 	else
-		if(mysetting.singleCh)						//点击非确定键，则删除创建的plotwindow2窗口
+		if(mysetting.singleCh)										//点击非确定键，则删除创建的plotwindow2窗口
 		{
 			delete plotWindow_2;
 			delete dockqwt_2;
 		}
+	delete ParaSetDlg;												//防止内存泄漏
 }
 
 void MainWindow::start_position()							//电机转动到初始位置
@@ -248,13 +251,14 @@ void MainWindow::start_position()							//电机转动到初始位置
 
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
 {
-	PortDialog = new portDialog(this);
+//	PortDialog = new portDialog(this);
 	PortDialog->inital_data(portname,SP,trig_HoldOff,mysetting.angleNum,stopped);
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
 		SP = PortDialog->get_returnSet();					//从串口对话框接收SP值
 		trig_HoldOff = PortDialog->get_returnMotor_connect();//从串口对话框接收连接电机bool值
 	}
+//	delete PortDialog;										//防止内存泄露
 }
 
 void MainWindow::path_create()						//数据存储文件夹的创建
@@ -357,12 +361,26 @@ void MainWindow::receive_response(const QString &s)	//处理串口返回值
 		PX0 = PX1;
 	}
 	else
-		if((s.left(2) != "PX")||(s.left(2) != "PR"))		//当串口返回命令不正确时
+		if(s.left(2) == "SP")
 		{
-			timer1->stop();									//关闭定时器，并提示串口返回值错误
-			stopped = true;									//采集停止
-			QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Value returned by serial port is incorrect"));
+			QString req_MOPX = "MO;PX;";					//发送串口命令"MO;PX;"
+			thread_coll.transaction(portname,req_MOPX);
 		}
+		else
+			if(s.left(2) == "MO")							//接收串口命令"MO;PX;"的返回值
+			{
+				QString res_MOPX = s;
+				QStringList reslist = res_MOPX.split(";");	//获取当前位置
+				QString res = reslist.at(3).toLocal8Bit().data();
+				PortDialog->show_PX(res);					//在串口对话框中显示当前位置PX
+			}
+			else
+				if(s.left(2) != "PR")
+				{
+					timer1->stop();							//关闭定时器，并提示串口返回值错误
+					stopped = true;							//采集停止
+					QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Value returned by serial port is incorrect"));
+				}
 }
 
 void MainWindow::receive_portopen()					//串口未正确打开
@@ -372,11 +390,20 @@ void MainWindow::receive_portopen()					//串口未正确打开
 	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Serial port can't open"));
 }
 
-void MainWindow::receive_timeout()
+void MainWindow::receive_timeout()					//接收串口命令超时
 {
 	timer1->stop();
 	stopped = true;
 	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Receive timeout"));
+}
+
+void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的信息
+{
+	QString re_need = re;
+	if(re_need.left(3) == "COM")
+		portname = re_need;
+	else
+		thread_coll.transaction(portname,re_need);
 }
 
 void MainWindow::on_action_stop_triggered()			//采集菜单中的停止键

@@ -59,6 +59,7 @@ void portDialog::search_port()								//搜索串口函数
 				{
 					portTested = info.portName();
 					ui->lineEdit_serialportName->setText(portTested);
+					break;
 				}
 			}
 		}
@@ -66,6 +67,7 @@ void portDialog::search_port()								//搜索串口函数
 	my_serial.close();
 	if(portTested == NULL)
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Please connect serialport correctly!"));
+	emit this->portdlg_send(portTested);
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 
@@ -140,7 +142,8 @@ void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
 	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PR);
 	qDebug() << "request = " << request;
-	thread_dia.transaction(portTested,request);
+//	thread_dia.transaction(portTested,request);
+	emit this->portdlg_send(request);
 	ui->pushButton_opposite->setEnabled(true);
 }
 
@@ -156,7 +159,8 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
 	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PA);
 	qDebug() << "request = " << request;
-	thread_dia.transaction(portTested,request);
+//	thread_dia.transaction(portTested,request);
+	emit this->portdlg_send(request);
 	ui->pushButton_absolute->setEnabled(true);
 }
 
@@ -165,6 +169,13 @@ void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 	ui->pushButton_setPXis0->setEnabled(false);
 	request = "MO=0;PX=0;MO=1;";
 	qDebug() << "request = " << request;
-	thread_dia.transaction(portTested,request);
+//	thread_dia.transaction(portTested,request);
+	emit this->portdlg_send(request);
 	ui->pushButton_setPXis0->setEnabled(true);
+}
+
+void portDialog::show_PX(const QString &px_show)
+{
+	QString strPx = px_show;
+	ui->lineEdit_PX->setText(strPx);
 }

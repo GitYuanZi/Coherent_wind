@@ -24,6 +24,11 @@ public:
 
 	bool get_returnMotor_connect();			//返回连接电机的bool值给主程序
 
+	void show_PX(const QString &px_show);	//显示当前位置
+
+signals:
+	void portdlg_send(const QString &re);	//对话框返回字符串到主程序
+
 private slots:
 //	void opposite_transaction();				//相对转动
 //	void absolute_transaction();				//绝对转动
@@ -44,7 +49,7 @@ private slots:
 
 private:
 	Ui::portDialog *ui;
-	QString portTested;
+	QString portTested;			//串口名
 	SerialPortThread thread_dia;
 
 	QString dialog_SP;			//速度

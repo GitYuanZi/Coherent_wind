@@ -49,6 +49,8 @@ private slots:
 	void receive_portopen();						//串口未成功打开时
 	void receive_timeout();							//接收串口命令超时
 
+	void receive_portdlg(const QString &re);
+
 private:
     Ui::MainWindow *ui;
     paraDialog *ParaSetDlg;
@@ -62,7 +64,7 @@ private:
 	void search_port();								//串口搜索
 	void start_position();							//驱动器的初始角位置
 	int PX0, PX1;									//驱动器返回的PX值
-	bool trig_HoldOff;								//该值为真，表示连接电机
+	bool trig_HoldOff;								//单方向采集连接电机
 
     ACQSETTING mysetting;
 
@@ -96,7 +98,7 @@ private:
 	QString FileName_B;
 
 	int numbercollect;			//采集方向组数
-	bool stopped;		//用于判断是否点击了停止采集
+	bool stopped;				//停止采集
 
 	QString timestr;			//采集时间
 	uint direction_angle;		//方位角
