@@ -55,6 +55,7 @@ void SerialPortThread::run()
 			if(!serial.open(QIODevice::ReadWrite))
 			{
 				qDebug() << "Can't open "<< currentPortName;
+				emit this->portOpen();							//串口未成功打开，信号返回到主程序
 				return;
 			}
 			serial.setBaudRate(QSerialPort::Baud19200);			//波特率
@@ -78,10 +79,16 @@ void SerialPortThread::run()
 				qDebug() << "response = " << response;
 			}
 			else
-				qDebug() << "Timeout1";
+			{
+				emit this->timeout();
+				return;
+			}
 		}
 		else
-			qDebug() << "Timeout2";
+		{
+			emit this->timeout();
+			return;
+		}
 		mutex.lock();
 		cond.wait(&mutex);
 		if(currentPortName != portName)

@@ -69,12 +69,13 @@ void portDialog::search_port()								//搜索串口函数
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 
-void portDialog::inital_data(const QString &a,int b, bool c, int d)//初始数据函数
+void portDialog::inital_data(const QString &a,int b, bool c, int d,bool e)//初始数据函数
 {
 	portTested = a;
 	retSP = b;
 	HoldOff = c;
 	col_num = d;
+	nocoll = e;
 	ui->lineEdit_serialportName->setText(portTested);		//串口名
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
@@ -83,6 +84,16 @@ void portDialog::inital_data(const QString &a,int b, bool c, int d)//初始数�
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
+	if(!nocoll)												//若正在采集，界面除取消键，其他均为非使能状态
+	{
+		ui->groupBox->setEnabled(false);
+		ui->groupBox_2->setEnabled(false);
+		ui->groupBox_3->setEnabled(false);
+		ui->groupBox_4->setEnabled(false);
+		ui->groupBox_motor->setEnabled(false);
+		ui->pushButton_default->setEnabled(false);
+		ui->pushButton_sure->setEnabled(false);
+	}
 	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
 	if(!(col_num == 1))
 		ui->groupBox_motor->setEnabled(false);

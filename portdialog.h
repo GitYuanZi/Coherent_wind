@@ -16,7 +16,7 @@ public:
 	explicit portDialog(QWidget *parent = 0);
 	~portDialog();
 
-	void inital_data(const QString &a,int b, bool c,int d);//默认的设置参数
+	void inital_data(const QString &a,int b, bool c,int d,bool e);//默认的设置参数
 
 	int get_returnSet();					//将类型为QString的串口值返回到主线程中
 
@@ -57,6 +57,7 @@ private:
 	int retSP;					//返回给主程序的SP值
 	bool HoldOff;				//是否连接电机
 	int col_num;				//采集的组数
+	bool nocoll;				//是否正在采集
 };
 
 #endif // PORTDIALOG_H

@@ -36,6 +36,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	//	search_port();													//串口搜索
 	portname = "COM3";
 	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
+	connect(&thread_coll, SIGNAL(portOpen()),this,SLOT(receive_portopen()));//连接串口未打开时对应的槽函数
+	connect(&thread_coll, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
 
 	timer1 = new QTimer(this);											//触发各个方向上开始采集
 	timer2 = new QTimer(this);											//用于判断do—while
@@ -44,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
 	SP = 90;															//驱动器速度默认45
 	trig_HoldOff = true;												//单方向探测默认连接电机
+	stopped = true;														//初始状态，未进行数据采集
 }
 
 MainWindow::~MainWindow()
@@ -193,7 +196,7 @@ void MainWindow::on_action_set_triggered()					//action_set键
 	//	ParaSetDlg->setWindowTitle(QString::fromLocal8Bit("设置"));
 	//	ParaSetDlg->setWindowIcon(QIcon(":/images/set"));
 
-	ParaSetDlg->init_setting(mysetting,SP);							//mysetting传递给设置窗口psetting
+	ParaSetDlg->init_setting(mysetting,SP,stopped);							//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
 	ParaSetDlg->on_checkBox_autocreate_datafile_clicked();			//更新文件存储路径
 
@@ -246,7 +249,7 @@ void MainWindow::start_position()							//电机转动到初始位置
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
 {
 	PortDialog = new portDialog(this);
-	PortDialog->inital_data(portname,SP,trig_HoldOff,mysetting.angleNum);
+	PortDialog->inital_data(portname,SP,trig_HoldOff,mysetting.angleNum,stopped);
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
 		SP = PortDialog->get_returnSet();					//从串口对话框接收SP值
@@ -273,8 +276,8 @@ void MainWindow::refresh()							//paradialog重新设置后，对绘图曲线�
 
 void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 {
-	path_create();									//数据存储文件夹的创建
 	stopped = false;								//stopped为false。能够采集
+	path_create();									//数据存储文件夹的创建
 	numbercollect = 0;
 
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
@@ -327,7 +330,7 @@ void MainWindow::collect_cond()						//位置判断函数，利用定时器定�
 	qDebug() << "judge = " << judge;
 }
 
-void MainWindow::receive_response(const QString &s)
+void MainWindow::receive_response(const QString &s)	//处理串口返回值
 {
 	if(s.left(2) == "PX")
 	{
@@ -353,6 +356,27 @@ void MainWindow::receive_response(const QString &s)
 		}
 		PX0 = PX1;
 	}
+	else
+		if((s.left(2) != "PX")||(s.left(2) != "PR"))		//当串口返回命令不正确时
+		{
+			timer1->stop();									//关闭定时器，并提示串口返回值错误
+			stopped = true;									//采集停止
+			QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Value returned by serial port is incorrect"));
+		}
+}
+
+void MainWindow::receive_portopen()					//串口未正确打开
+{
+	timer1->stop();									//关闭定时器time1,并提示未能正确打开串口
+	stopped = true;									//采集停止
+	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Serial port can't open"));
+}
+
+void MainWindow::receive_timeout()
+{
+	timer1->stop();
+	stopped = true;
+	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Receive timeout"));
 }
 
 void MainWindow::on_action_stop_triggered()			//采集菜单中的停止键
@@ -571,9 +595,10 @@ void MainWindow::singlecollect()									//单通道采集和存储
 	onecollect_over = true;											//单次采集完成
 }
 
-void MainWindow::collect_over()
+void MainWindow::collect_over()										//采集结束处理函数
 {
 	timer1->stop();
+	stopped = true;
 	ADQ212_DisarmTrigger(adq_cu,1);
 	ADQ212_MultiRecordClose(adq_cu,1);
 

@@ -24,12 +24,13 @@ paraDialog::~paraDialog()
 	delete ui;
 }
 
-void paraDialog::init_setting(const ACQSETTING &setting, int b)
+void paraDialog::init_setting(const ACQSETTING &setting, int b, bool sop)
 {
 	psetting = setting;
 	defaulsetting = setting;
 	dlg_setfile.init_fsetting(psetting);						//把psetting传递给fsetting
 	dlg_SP = b;													//SP值
+	nocollecting = sop;
 }
 
 void paraDialog::initial_para()
@@ -362,6 +363,9 @@ void paraDialog::update_show()
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
 	ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
+
+	if(!nocollecting)																		//若程序未采集，确定键能够使用
+		ui->pushButton_sure->setEnabled(false);
 																							//下方参考信息
 	show_detect_mode();																		//探测方式
 	if(psetting.step_azAngle == 0)															//扫描探测box

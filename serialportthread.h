@@ -17,7 +17,9 @@ public:
 	void run();
 
 signals:
+	void portOpen();
 	void response(const QString &s);
+	void timeout();
 
 private:
 	QString portName;

@@ -46,6 +46,8 @@ private slots:
 	void doublecollect(void);						//双通道采集及存储
 	void collect_over();							//采集结束用于关闭multi-record
 	void receive_response(const QString &s);		//串口线程发送命令后的返回值
+	void receive_portopen();						//串口未成功打开时
+	void receive_timeout();							//接收串口命令超时
 
 private:
     Ui::MainWindow *ui;
@@ -94,7 +96,7 @@ private:
 	QString FileName_B;
 
 	int numbercollect;			//采集方向组数
-	volatile bool stopped;		//用于判断是否点击了停止采集
+	bool stopped;		//用于判断是否点击了停止采集
 
 	QString timestr;			//采集时间
 	uint direction_angle;		//方位角
