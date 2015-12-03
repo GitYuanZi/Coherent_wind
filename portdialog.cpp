@@ -2,8 +2,10 @@
 #include "ui_portdialog.h"
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
+
 #include <QDebug>
 #include <QMessageBox>
+#include <QString>
 
 portDialog::portDialog(QWidget *parent) :
 	QDialog(parent),
@@ -65,19 +67,20 @@ void portDialog::search_port()								//搜索串口函数
 		}
 	}
 	my_serial.close();
-	if(portTested == NULL)
-		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Please connect serialport correctly!"));
+	if((portTested == NULL)||(portTested.left(3) != "COM"))
+		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
 	emit this->portdlg_send(portTested);
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 
-void portDialog::inital_data(const QString &a,int b, bool c, int d,bool e)//初始数据函数
+void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
 {
 	portTested = a;
 	retSP = b;
 	HoldOff = c;
 	col_num = d;
 	nocoll = e;
+
 	ui->lineEdit_serialportName->setText(portTested);		//串口名
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
@@ -99,6 +102,18 @@ void portDialog::inital_data(const QString &a,int b, bool c, int d,bool e)//初�
 	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
 	if(!(col_num == 1))
 		ui->groupBox_motor->setEnabled(false);
+	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
+}
+
+void portDialog::set_SP()
+{
+	if(ui->lineEdit_SP->text().toInt() > 90)
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("error"),QString::fromLocal8Bit("90"));
+		ui->lineEdit_SP->setText(NULL);
+	}
+	else
+		retSP = ui->lineEdit_SP->text().toInt();
 }
 
 void portDialog::on_pushButton_default_clicked()			//默认键

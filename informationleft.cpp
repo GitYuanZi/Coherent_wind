@@ -35,7 +35,7 @@ void informationleft::set_currentAngle(quint16 a)		//当前角度、圆盘示意
 
 }
 
-void informationleft::set_groupNume(quint16 a)			//总组数
+void informationleft::set_groupNume(quint32 a)			//总组数
 {
 	groupNume = a;
 }

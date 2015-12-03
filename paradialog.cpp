@@ -24,12 +24,11 @@ paraDialog::~paraDialog()
 	delete ui;
 }
 
-void paraDialog::init_setting(const ACQSETTING &setting, int b, bool sop)
+void paraDialog::init_setting(const ACQSETTING &setting, bool sop)
 {
 	psetting = setting;
 	defaulsetting = setting;
 	dlg_setfile.init_fsetting(psetting);						//把psetting传递给fsetting
-	dlg_SP = b;													//SP值
 	nocollecting = sop;
 }
 
@@ -235,12 +234,24 @@ void paraDialog::set_start_azAngle()												//psetting获取编辑框值
 
 void paraDialog::set_triggerLevel()													//psetting获取编辑框值
 {
-	psetting.triggleLevel = ui->lineEdit_triggerLevel->text().toInt();
+	if((ui->lineEdit_triggerLevel->text().toInt() >= 8191)||(ui->lineEdit_triggerLevel->text().toInt() <= -8192))
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发电平范围应为-8192至8191之间"));
+		ui->lineEdit_triggerLevel->setText(NULL);
+	}
+	else
+		psetting.triggleLevel = ui->lineEdit_triggerLevel->text().toInt();
 }
 
 void paraDialog::set_triggerHoldOffSamples()										//psetting获取触发延迟编辑框中的值
 {
-	psetting.triggerHoldOffSamples = ui->lineEdit_triggerHoldOffSamples->text().toInt();
+	if(ui->lineEdit_triggerHoldOffSamples->text().toInt() < 0)
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发延迟为非负数"));
+		ui->lineEdit_triggerLevel->setText(NULL);
+	}
+	else
+		psetting.triggerHoldOffSamples = ui->lineEdit_triggerHoldOffSamples->text().toInt();
 }
 
 void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
@@ -530,7 +541,7 @@ void paraDialog::updated_filename()
 
 void paraDialog::set_dect_time()												//计算探测时间
 {
-	int time_need = (float)psetting.plsAccNum*psetting.angleNum/psetting.laserRPF+(psetting.angleNum-1)*(float)(dlg_SP*800/3)/96000;
+	int time_need = (float)psetting.plsAccNum*psetting.angleNum/psetting.laserRPF+(psetting.angleNum-1)*(float)(psetting.SP*800/3)/96000;
 	if(time_need < 1)
 		ui->lineEdit_totalTime->setText("<1s");									//在1s以下
 	else

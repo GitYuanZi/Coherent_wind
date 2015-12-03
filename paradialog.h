@@ -17,7 +17,7 @@ public:
     explicit paraDialog(QWidget *parent = 0);
     ~paraDialog();
 
-	void init_setting(const ACQSETTING &setting, int b, bool sop);
+	void init_setting(const ACQSETTING &setting, bool sop);
     ACQSETTING get_setting(void);
     void update_show();
 															//参考信息显示
@@ -74,7 +74,6 @@ private:
 	settingFile dlg_setfile;
 	QString profile_path;										//配置文件路径
 
-	int dlg_SP;													//SP值
 	void set_dect_time();										//计算预估探测时间
 	bool nocollecting;											//是否正在采集数据
 };

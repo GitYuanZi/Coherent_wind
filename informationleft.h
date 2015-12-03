@@ -18,7 +18,7 @@ public:
 public slots:
 	void set_currentAngle(quint16 a);					//当前角度
 	void set_groupcnt(quint16 a);						// 采集组数分数
-	void set_groupNume(quint16 a);						//采集组数百分数
+	void set_groupNume(quint32 a);						//采集组数百分数
 	void set_filename1(QString str);					//数据文件名1
 	void set_filename2(QString str);					//数据文件名2
 

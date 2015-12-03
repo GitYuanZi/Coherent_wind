@@ -25,6 +25,9 @@ public:
 protected:
     void run();
 
+signals:
+	void store_finish();								//数据存储完成
+
 private:
     ACQSETTING tsetting;
 

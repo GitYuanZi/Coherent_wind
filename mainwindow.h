@@ -16,6 +16,8 @@
 #include <QDataStream>
 #include <QDockWidget>
 #include <QtSerialPort/QSerialPort>
+#include <QCloseEvent>
+#include <QLabel>
 
 namespace Ui {
 class MainWindow;
@@ -45,11 +47,15 @@ private slots:
 	void collect_cond();
 	void doublecollect(void);						//双通道采集及存储
 	void collect_over();							//采集结束用于关闭multi-record
+
 	void receive_response(const QString &s);		//串口线程发送命令后的返回值
 	void receive_portopen();						//串口未成功打开时
 	void receive_timeout();							//接收串口命令超时
-
+	void receive_storefinish();						//存储线程完成，线程数减1
 	void receive_portdlg(const QString &re);
+
+protected:
+	void closeEvent(QCloseEvent *event);			//程序关闭时，检查存储线程
 
 private:
     Ui::MainWindow *ui;
@@ -57,7 +63,6 @@ private:
 	portDialog *PortDialog;							//串口的对话框
 	SerialPortThread thread_coll;					//串口读写线程
 
-	int SP;											//驱动器速度
 	QString portname;								//连接的串口名
 	QString request_send;							//发送给串口的命令
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
@@ -92,19 +97,24 @@ private:
     threadStore threadB;
     threadStore threadC;
     threadStore threadD;
+	bool check_threadStore();	//检查存储线程状态
+	int num_running;			//正在运行的线程数
+	void set_statusbar();		//设置状态栏
+	QStatusBar *bar;
+	QLabel *storenum;			//声明标签对象，用于显示状态信息
 
 	QString FileName_1;			//完整文件名
 	QString FileName_A;
 	QString FileName_B;
 
-	int numbercollect;			//采集方向组数
+	quint32 numbercollect;		//采集方向组数
 	bool stopped;				//停止采集
 
 	QString timestr;			//采集时间
 	uint direction_angle;		//方位角
     void *adq_cu;
 	int trig_mode;				//触发模式
-	int trig_level;				//触发电平
+	qint16 trig_level;				//触发电平
 	int trig_flank;				//触发边沿
 	int trig_channel;			//触发通道
     int clock_source ;

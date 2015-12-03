@@ -11,10 +11,11 @@ typedef struct
     quint16 AOM_Freq;
 
     //扫描参数
-    quint16 elevationAngle;
+	quint16 SP;				//驱动器速度
+	quint16 elevationAngle;
     quint16 start_azAngle;
     quint16 step_azAngle;
-    quint16 angleNum;
+	quint32 angleNum;
     float circleNum;
     bool anglekey;
     bool circlekey;
@@ -22,8 +23,8 @@ typedef struct
     //采样参数
     bool singleCh;
     bool doubleCh;
-    quint16 triggleLevel;
-	quint16 triggerHoldOffSamples;
+	qint16 triggleLevel;
+	qint16 triggerHoldOffSamples;
     quint16 sampleFreq;
     quint32 sampleNum;
     float detRange;

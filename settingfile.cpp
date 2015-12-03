@@ -14,11 +14,12 @@ void settingFile::init_fsetting(const ACQSETTING &setting)
 	fsetting = setting;
 }
 
-void settingFile::writeTo_file(const ACQSETTING &setting,QString a )
+void settingFile::writeTo_file(const ACQSETTING &setting,const QString &a )
 {
 	fsetting = setting;
+	QString path_a = a;
 
-	QSettings settings(a,QSettings::IniFormat);
+	QSettings settings(path_a,QSettings::IniFormat);
 	settings.beginGroup("Laser_parameters");
 	settings.setValue("laserRPF",fsetting.laserRPF);					//激光重频
 	settings.setValue("laserPulseWidth",fsetting.laserPulseWidth);		//激光脉宽
@@ -55,9 +56,10 @@ void settingFile::writeTo_file(const ACQSETTING &setting,QString a )
 	settings.endGroup();
 }
 
-void settingFile::readFrom_file(QString a)
+void settingFile::readFrom_file(const QString &b)
 {
-	QSettings settings(a,QSettings::IniFormat);
+	QString path_b = b;
+	QSettings settings(path_b,QSettings::IniFormat);
 	settings.beginGroup("Laser_parameters");
 	fsetting.laserRPF = settings.value("laserRPF").toInt();
 	fsetting.laserPulseWidth = settings.value("laserPulseWidth").toInt();
@@ -99,12 +101,14 @@ void settingFile::checkValid()
 }
 
 //检查settings.ini是否存在，若不存在则创建
-void settingFile::test_create_file(QString a)
+void settingFile::test_create_file(const QString &c,const QString &d)
 {
-	QFileInfo file(a);
+	QString path_c = c;
+	QString prefix_str = d;
+	QFileInfo file(path_c);
 	if(file.exists() == false)
 	{
-		QSettings settings(a,QSettings::IniFormat);
+		QSettings settings(path_c,QSettings::IniFormat);
 		settings.beginGroup("Laser_parameters");
 		settings.setValue("laserRPF",10000);				//激光重频
 		settings.setValue("laserPulseWidth",140);			//激光脉宽
@@ -134,9 +138,11 @@ void settingFile::test_create_file(QString a)
 		settings.endGroup();
 
 		settings.beginGroup("File_store");
-		settings.setValue("DatafilePath","");				//文件保存路径
+		path_c.chop(13);									//截掉末尾配置文件名
+		path_c.append("/").append(prefix_str);				//路径末尾加上日期文件夹
+		settings.setValue("DatafilePath",path_c);			//文件保存路径
 		settings.setValue("autocreate_datafile",true);		//自动创建日期文件夹
-		settings.setValue("dataFileNamePrefix","");			//前缀文件名
+		settings.setValue("dataFileNamePrefix",prefix_str);	//前缀文件名
 		settings.setValue("dataFileNameSuffix","001");		//后缀文件名
 		settings.endGroup();
 	}

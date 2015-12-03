@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QDateTime>
 #include <QtCore>
+#include <QLabel>
 
 #include <QDesktopServices>
 #include <QApplication>
@@ -26,7 +27,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	QDir dirs;
 	QString paths = dirs.currentPath()+"/"+"settings.ini";				//获取初始默认路径，并添加默认配置文件
-	m_setfile.test_create_file(paths);									//检查settings.ini是否存在，若不存在则创建
+	QString prefix_date = QDateTime::currentDateTime().toString("yyyyMMdd");
+	m_setfile.test_create_file(paths,prefix_date);						//检查settings.ini是否存在，若不存在则创建
 	m_setfile.readFrom_file(paths);										//读取settings.ini文件
 	mysetting = m_setfile.get_setting();								//mysetting获取文件中的参数
 
@@ -40,21 +42,26 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&thread_coll, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
 
 	PortDialog = new portDialog(this);
-	connect(PortDialog,SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
+	connect(PortDialog, SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
 
 	timer1 = new QTimer(this);											//触发各个方向上开始采集
 	timer2 = new QTimer(this);											//用于判断do—while
 	timer2->setSingleShot(true);
 	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
 	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
-	SP = 90;															//驱动器速度默认45
 	trig_HoldOff = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
+
+	connect(&threadA, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
+	connect(&threadB, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
+	connect(&threadC, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
+	connect(&threadD, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
+	num_running = 0;													//运行线程数为0
+	set_statusbar();													//状态栏
 }
 
 MainWindow::~MainWindow()
 {
-	DeleteADQControlUnit(adq_cu);
 	delete ui;
 }
 
@@ -199,7 +206,7 @@ void MainWindow::on_action_set_triggered()					//action_set键
 	//	ParaSetDlg->setWindowTitle(QString::fromLocal8Bit("设置"));
 	//	ParaSetDlg->setWindowIcon(QIcon(":/images/set"));
 
-	ParaSetDlg->init_setting(mysetting,SP,stopped);					//mysetting传递给设置窗口psetting
+	ParaSetDlg->init_setting(mysetting,stopped);					//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
 	ParaSetDlg->on_checkBox_autocreate_datafile_clicked();			//更新文件存储路径
 
@@ -244,7 +251,7 @@ void MainWindow::on_action_set_triggered()					//action_set键
 void MainWindow::start_position()							//电机转动到初始位置
 {
 	int startAngle = mysetting.start_azAngle*800/3;			//初始角
-	QString start_data = "SP="+QString::number(SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
+	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
 	qDebug() << "start_data = " << start_data;				//PA为绝对转动
 	thread_coll.transaction(portname,start_data);			//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
 }
@@ -252,10 +259,10 @@ void MainWindow::start_position()							//电机转动到初始位置
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
 {
 //	PortDialog = new portDialog(this);
-	PortDialog->inital_data(portname,SP,trig_HoldOff,mysetting.angleNum,stopped);
+	PortDialog->inital_data(portname,mysetting.SP,trig_HoldOff,mysetting.angleNum,stopped);
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
-		SP = PortDialog->get_returnSet();					//从串口对话框接收SP值
+		mysetting.SP = PortDialog->get_returnSet();			//从串口对话框接收SP值
 		trig_HoldOff = PortDialog->get_returnMotor_connect();//从串口对话框接收连接电机bool值
 	}
 //	delete PortDialog;										//防止内存泄露
@@ -280,6 +287,11 @@ void MainWindow::refresh()							//paradialog重新设置后，对绘图曲线�
 
 void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 {
+	if((!check_threadStore())&&stopped)				//检查存储线程是否完成数据存储
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
+		return;
+	}
 	stopped = false;								//stopped为false。能够采集
 	path_create();									//数据存储文件夹的创建
 	numbercollect = 0;
@@ -574,6 +586,8 @@ void MainWindow::singlecollect()									//单通道采集和存储
 		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.s_memcpy(rd_data1);							//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
+		num_running++;										//线程数加1，状态栏显示线程数
+		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 	}
 	else
 		if(!threadB.isRunning())
@@ -582,6 +596,8 @@ void MainWindow::singlecollect()									//单通道采集和存储
 			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.s_memcpy(rd_data1);
 			threadB.start();
+			num_running++;
+			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		}
 		else
 			if(!threadC.isRunning())
@@ -590,14 +606,26 @@ void MainWindow::singlecollect()									//单通道采集和存储
 				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.s_memcpy(rd_data1);
 				threadC.start();
+				num_running++;
+				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			}
 			else
-			{
-				threadD.fileDataPara(mysetting);
-				threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
-				threadD.s_memcpy(rd_data1);
-				threadD.start();
-			}
+				if(!threadD.isRunning())
+				{
+					threadD.fileDataPara(mysetting);
+					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+					threadD.s_memcpy(rd_data1);
+					threadD.start();
+					num_running++;
+					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
+				}
+				else										//四个线程都在运行时，停止采集
+				{
+					collect_over();
+					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
+					onecollect_over = true;
+					return;
+				}
 
 	plotWindow_1->datashow(rd_data1,mysetting.sampleNum,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
 	delete[] rd_data1;
@@ -792,6 +820,8 @@ void MainWindow::doublecollect()									//双通道采集和存储
 		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.d_memcpy(rd_dataa,rd_datab);				//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
+		num_running++;
+		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 	}
 	else
 		if(!threadB.isRunning())
@@ -800,6 +830,8 @@ void MainWindow::doublecollect()									//双通道采集和存储
 			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.d_memcpy(rd_dataa,rd_datab);
 			threadB.start();
+			num_running++;
+			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		}
 		else
 			if(!threadC.isRunning())
@@ -808,14 +840,26 @@ void MainWindow::doublecollect()									//双通道采集和存储
 				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.d_memcpy(rd_dataa,rd_datab);
 				threadC.start();
+				num_running++;
+				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			}
 			else
-			{
-				threadD.fileDataPara(mysetting);
-				threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
-				threadD.d_memcpy(rd_dataa,rd_datab);
-				threadD.start();
-			}
+				if(!threadD.isRunning())
+				{
+					threadD.fileDataPara(mysetting);
+					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+					threadD.d_memcpy(rd_dataa,rd_datab);
+					threadD.start();
+					num_running++;
+					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
+				}
+				else															//四个线程都在运行时，停止采集
+				{
+					collect_over();
+					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
+					onecollect_over = true;
+				}
+
 	plotWindow_1->datashow(rd_dataa,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示a最后一组脉冲
 	delete[] rd_dataa;
 	plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示b最后一组脉冲
@@ -853,9 +897,9 @@ void MainWindow::conncetdevice()									//查找连接ADQ212设备
 	n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);		//返回找到的单元数量
 
 	if(n_of_failed > 0)
-		QMessageBox::warning(this,QString::fromLocal8Bit("Warning"),QString::fromLocal8Bit("设备启动失败"));
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备启动失败"));
 	if(n_of_devices == 0)
-		QMessageBox::information(this,QString::fromLocal8Bit("Warning"),QString::fromLocal8Bit("No ADQ devices found"));
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备连接失败"));
 
 	if(n_of_ADQ212 != 0)
 	{
@@ -868,7 +912,7 @@ void MainWindow::conncetdevice()									//查找连接ADQ212设备
 		qDebug() << Revision[3];									//revision数
 		qDebug() << Revision[4];									//0表示SVN Managed，1表示Local Copy
 		qDebug() << Revision[5];									//0表示SVN Updated，1表示Mixed Revision
-		QMessageBox::information(this,QString::fromLocal8Bit("Information"),QString::fromLocal8Bit("1 ADQ device found."));
+		QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集卡设备连接成功"));
 	}
 }
 
@@ -910,5 +954,44 @@ void MainWindow::search_port()										//搜索串口，确定串口名
 	my_serial.close();
 	qDebug() << "portName = " << portname;
 	if(portname == NULL)
-		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Please connect serialport correctly!"));
+		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
+}
+
+bool MainWindow::check_threadStore()								//检查存储线程运行状态
+{
+	if(num_running == 0)
+		return true;
+	else
+		return false;
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)						//检查存储线程是否完成数据存储
+{
+	if((num_running != 0)&&stopped)
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
+		event->ignore();
+	}
+	else
+	{
+		DeleteADQControlUnit(adq_cu);
+		event->accept();
+	}
+}
+
+void MainWindow::set_statusbar()									//设置状态栏
+{
+	bar = ui->statusBar;											//获取状态栏
+	storenum = new QLabel;											//新建标签
+	storenum->setMinimumSize(1280,22);								//设置标签最小尺寸
+//	storenum->setFrameShape(QFrame::WinPanel);						//设置标签形状
+//	storenum->setFrameShadow(QFrame::Sunken);						//设置标签阴影
+	bar->addWidget(storenum);
+}
+
+void MainWindow::receive_storefinish()								//线程存储完成，线程数减1
+{
+	num_running--;
+	storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
+
 }

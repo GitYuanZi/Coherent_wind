@@ -15,6 +15,7 @@ void threadStore::run()
 		singleData();
 	else
 		doubleData();
+	emit this->store_finish();
 }
 
 void threadStore::singleData()

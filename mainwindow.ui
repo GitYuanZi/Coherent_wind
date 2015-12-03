@@ -111,7 +111,14 @@
    <addaction name="action_start"/>
    <addaction name="action_stop"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="maximumSize">
+    <size>
+     <width>1280</width>
+     <height>22</height>
+    </size>
+   </property>
+  </widget>
   <action name="action_open">
    <property name="icon">
     <iconset resource="images.qrc">
@@ -124,7 +131,7 @@
     <string>打开</string>
    </property>
    <property name="statusTip">
-    <string>Open an existing file</string>
+    <string>打开数据采集文件的存储位置</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+O</string>
@@ -171,7 +178,7 @@
     <string>参数设置</string>
    </property>
    <property name="statusTip">
-    <string>Open the parameter-setting dialog</string>
+    <string>打开采集参数设置对话框</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+T</string>
@@ -189,7 +196,7 @@
     <string>开始数据采集</string>
    </property>
    <property name="statusTip">
-    <string>Start collecting data</string>
+    <string>开始采集</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
@@ -207,7 +214,7 @@
     <string>停止数据采集</string>
    </property>
    <property name="statusTip">
-    <string>Stop collecting data</string>
+    <string>停止采集</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -221,7 +228,7 @@
     <string>帮助</string>
    </property>
    <property name="statusTip">
-    <string>About this software</string>
+    <string>帮助</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+L</string>
@@ -239,18 +246,25 @@
     <string>搜索并连接设备</string>
    </property>
    <property name="statusTip">
-    <string>Search ADQdevice and conncet</string>
+    <string>搜索采集卡设备并连接</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>
    </property>
   </action>
   <action name="action_serialport">
+   <property name="icon">
+    <iconset resource="images.qrc">
+     <normaloff>:/images/port.png</normaloff>:/images/port.png</iconset>
+   </property>
    <property name="text">
     <string>串口(&amp;P)</string>
    </property>
    <property name="toolTip">
     <string>串口</string>
+   </property>
+   <property name="statusTip">
+    <string>打开串口设置对话框</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
