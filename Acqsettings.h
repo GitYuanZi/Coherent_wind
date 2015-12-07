@@ -30,11 +30,11 @@ typedef struct
     float detRange;
     quint16 plsAccNum;
 
-    //文件存储
+	//文件存储
     QString DatafilePath;
     bool autocreate_datafile;
     QString dataFileName_Prefix;
-    QString dataFileName_Suffix;
+	QString dataFileName_Suffix;
 }ACQSETTING;
 
 #endif // ACQSETTINGS_H

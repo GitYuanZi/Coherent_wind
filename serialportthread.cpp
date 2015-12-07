@@ -80,7 +80,7 @@ void SerialPortThread::run()
 			}
 			else
 			{
-				emit this->timeout();
+//				emit this->timeout();
 				return;
 			}
 		}

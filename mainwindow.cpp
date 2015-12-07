@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	timer2->setSingleShot(true);
 	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
 	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
-	trig_HoldOff = true;												//单方向探测默认连接电机
+	connect_Motor = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
 
 	connect(&threadA, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
@@ -259,11 +259,11 @@ void MainWindow::start_position()							//电机转动到初始位置
 void MainWindow::on_action_serialport_triggered()			//action_serialport键
 {
 //	PortDialog = new portDialog(this);
-	PortDialog->inital_data(portname,mysetting.SP,trig_HoldOff,mysetting.angleNum,stopped);
+	PortDialog->inital_data(portname,mysetting.SP,connect_Motor,mysetting.angleNum,stopped);
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
 		mysetting.SP = PortDialog->get_returnSet();			//从串口对话框接收SP值
-		trig_HoldOff = PortDialog->get_returnMotor_connect();//从串口对话框接收连接电机bool值
+		connect_Motor = PortDialog->get_returnMotor_connect();//从串口对话框接收连接电机bool值
 	}
 //	delete PortDialog;										//防止内存泄露
 }
@@ -305,7 +305,7 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 		return;
 	}
 
-	if(trig_HoldOff)								//连接电机
+	if(connect_Motor)								//连接电机
 	{
 		start_position();							//驱动器初始位置
 		int pr_data = mysetting.step_azAngle*800/3;
@@ -549,7 +549,7 @@ void MainWindow::singlecollect()									//单通道采集和存储
 	int *data_1_ptr_addr0 = ADQ212_GetPtrDataChA(adq_cu,1);
 	qDebug() << "Collecting data,plesase wait...";
 
-	if(trig_HoldOff)
+	if(connect_Motor)
 		thread_coll.transaction(portname,request_send);				//采集卡触发完成，驱动器开始转动
 
 	qint16 *rd_data1 = new qint16[samples_per_record*number_of_records];
@@ -582,42 +582,42 @@ void MainWindow::singlecollect()									//单通道采集和存储
 	
 	if(!threadA.isRunning())
 	{
+		num_running++;										//线程数加1，状态栏显示线程数
+		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
 		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.s_memcpy(rd_data1);							//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
-		num_running++;										//线程数加1，状态栏显示线程数
-		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 	}
 	else
 		if(!threadB.isRunning())
 		{
+			num_running++;
+			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			threadB.fileDataPara(mysetting);
 			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.s_memcpy(rd_data1);
 			threadB.start();
-			num_running++;
-			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		}
 		else
 			if(!threadC.isRunning())
 			{
+				num_running++;
+				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				threadC.fileDataPara(mysetting);
 				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.s_memcpy(rd_data1);
 				threadC.start();
-				num_running++;
-				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			}
 			else
 				if(!threadD.isRunning())
 				{
+					num_running++;
+					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 					threadD.fileDataPara(mysetting);
 					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 					threadD.s_memcpy(rd_data1);
 					threadD.start();
-					num_running++;
-					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				}
 				else										//四个线程都在运行时，停止采集
 				{
@@ -779,7 +779,7 @@ void MainWindow::doublecollect()									//双通道采集和存储
 
 	qDebug() << "Collecting data,plesase wait...";
 
-	if(trig_HoldOff)
+	if(connect_Motor)
 		thread_coll.transaction(portname,request_send);							//采集卡触发完成，驱动器开始转动
 
 	qint16 *rd_dataa = new qint16[samples_per_record*number_of_records];
@@ -816,42 +816,42 @@ void MainWindow::doublecollect()									//双通道采集和存储
 
 	if(!threadA.isRunning())
 	{
+		num_running++;
+		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
 		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.d_memcpy(rd_dataa,rd_datab);				//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
-		num_running++;
-		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 	}
 	else
 		if(!threadB.isRunning())
 		{
+			num_running++;
+			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			threadB.fileDataPara(mysetting);
 			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 			threadB.d_memcpy(rd_dataa,rd_datab);
 			threadB.start();
-			num_running++;
-			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		}
 		else
 			if(!threadC.isRunning())
 			{
+				num_running++;
+				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				threadC.fileDataPara(mysetting);
 				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 				threadC.d_memcpy(rd_dataa,rd_datab);
 				threadC.start();
-				num_running++;
-				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			}
 			else
 				if(!threadD.isRunning())
 				{
+					num_running++;
+					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 					threadD.fileDataPara(mysetting);
 					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
 					threadD.d_memcpy(rd_dataa,rd_datab);
 					threadD.start();
-					num_running++;
-					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				}
 				else															//四个线程都在运行时，停止采集
 				{

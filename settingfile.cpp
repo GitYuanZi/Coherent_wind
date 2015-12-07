@@ -31,6 +31,7 @@ void settingFile::writeTo_file(const ACQSETTING &setting,const QString &a )
 	settings.setValue("elevationAngle",fsetting.elevationAngle);		//俯仰角
 	settings.setValue("start_azAngle",fsetting.start_azAngle);			//起始角
 	settings.setValue("step_azAngle",fsetting.step_azAngle);			//步进角
+	settings.setValue("SP",fsetting.SP);								//电机速度
 	settings.setValue("angleNum",fsetting.angleNum);					//方向数
 	settings.setValue("circleNum",fsetting.circleNum);					//圆周数
 	settings.setValue("anglekey",fsetting.anglekey);					//方向数
@@ -71,6 +72,7 @@ void settingFile::readFrom_file(const QString &b)
 	fsetting.elevationAngle = settings.value("elevationAngle").toInt();		//俯仰角
 	fsetting.start_azAngle = settings.value("start_azAngle").toInt();		//起始角
 	fsetting.step_azAngle = settings.value("step_azAngle").toInt();			//步进角
+	fsetting.SP = settings.value("SP").toInt();								//电机速度
 	fsetting.angleNum = settings.value("angleNum").toInt();					//方向数
 	fsetting.circleNum = settings.value("circleNum").toFloat();				//圆周数
 	fsetting.anglekey = settings.value("anglekey").toBool();				//方向键
@@ -120,6 +122,7 @@ void settingFile::test_create_file(const QString &c,const QString &d)
 		settings.setValue("elevationAngle",60);				//俯仰角
 		settings.setValue("start_azAngle",0);				//起始角
 		settings.setValue("step_azAngle",90);				//步进角
+		settings.setValue("SP",90);							//电机速度
 		settings.setValue("angleNum",80);					//方向数
 		settings.setValue("circleNum",20);					//圆周数
 		settings.setValue("anglekey",true);					//方向键
@@ -167,6 +170,8 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 	if(fsetting.start_azAngle != dlgsetting.start_azAngle)			//起始角
 		return true;
 	if(fsetting.step_azAngle != dlgsetting.step_azAngle)			//步进角
+		return true;
+	if(fsetting.SP != dlgsetting.SP)								//电机速度
 		return true;
 	if(fsetting.angleNum != dlgsetting.angleNum)					//方向数
 		return true;

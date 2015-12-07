@@ -53,6 +53,7 @@ private slots:
     void set_sampleFreq();
 	void set_detRange();
 	void set_plsAccNum();
+	void set_motorSP();
 
 	void set_filesize();
 	void set_dataFileName_Suffix();
@@ -76,6 +77,8 @@ private:
 
 	void set_dect_time();										//计算预估探测时间
 	bool nocollecting;											//是否正在采集数据
+	void single_filesize();										//单通道单文件数据量
+	void double_filesize();										//双通道单文件数据量
 };
 
 #endif // PARADIALOG_H

@@ -62,7 +62,7 @@ private:
 	QString dialog_PX;			//当前位置
 	QString request;
 	int retSP;					//返回给主程序的SP值
-	bool HoldOff;				//是否连接电机
+	bool MotorConnect;			//是否连接电机
 	quint32 col_num;			//采集的组数
 	bool nocoll;				//是否正在采集
 };

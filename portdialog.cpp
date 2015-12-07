@@ -27,8 +27,8 @@ int portDialog::get_returnSet()								//返回SP值给主程序
 
 bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主程序
 {
-	HoldOff = ui->checkBox_motor_connected->isChecked();
-	return HoldOff;
+	MotorConnect = ui->checkBox_motor_connected->isChecked();
+	return MotorConnect;
 }
 
 void portDialog::search_port()								//搜索串口函数
@@ -77,7 +77,7 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 {
 	portTested = a;
 	retSP = b;
-	HoldOff = c;
+	MotorConnect = c;
 	col_num = d;
 	nocoll = e;
 
@@ -99,8 +99,8 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 		ui->pushButton_default->setEnabled(false);
 		ui->pushButton_sure->setEnabled(false);
 	}
-	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
-	if(!(col_num == 1))
+	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
+	if(col_num != 1)
 		ui->groupBox_motor->setEnabled(false);
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
 }
@@ -108,10 +108,7 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 void portDialog::set_SP()
 {
 	if(ui->lineEdit_SP->text().toInt() > 90)
-	{
-		QMessageBox::warning(this,QString::fromLocal8Bit("error"),QString::fromLocal8Bit("90"));
-		ui->lineEdit_SP->setText(NULL);
-	}
+		ui->lineEdit_SP->setText("90");
 	else
 		retSP = ui->lineEdit_SP->text().toInt();
 }
@@ -125,8 +122,8 @@ void portDialog::on_pushButton_default_clicked()			//默认键
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
-	ui->checkBox_motor_connected->setChecked(HoldOff);		//连接电机
-	if(!(col_num == 1))
+	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
+	if(col_num != 1)
 		ui->groupBox_motor->setEnabled(false);
 }
 

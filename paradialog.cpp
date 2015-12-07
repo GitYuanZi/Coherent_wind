@@ -60,6 +60,7 @@ void paraDialog::initial_para()
 	connect(ui->lineEdit_start_azAngle,&QLineEdit::textChanged,this,&paraDialog::set_start_azAngle);			//起始角
 	connect(ui->lineEdit_triggerLevel,&QLineEdit::textChanged,this,&paraDialog::set_triggerLevel);				//触发电平
 	connect(ui->lineEdit_triggerHoldOffSamples,&QLineEdit::textChanged,this,&paraDialog::set_triggerHoldOffSamples);//触发延迟
+	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&paraDialog::set_motorSP);
 
 	connect(ui->lineEdit_sampleNum,&QLineEdit::textChanged,this,&paraDialog::set_filesize);						//采样点数
 }
@@ -73,14 +74,14 @@ void paraDialog::set_elevationAngle()												//俯仰角 决定探测方向�
 void paraDialog::set_step_azAngle()													//步进角 是否为0决定是不是圆周扫描，大小决定每周扫描数//psetting获取编辑框值
 {
 	psetting.step_azAngle = ui->lineEdit_step_azAngle->text().toInt();
-	show_detect_mode();
-
 	if(psetting.step_azAngle == 0)
 	{
 		ui->groupBox_2->setEnabled(false);
 	}
 	else
 		ui->groupBox_2->setEnabled(true);											//扫描探测
+
+	show_detect_mode();
 }
 
 //设置方向数输入框的显示数值
@@ -142,8 +143,7 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 	ui->lineEdit_triggerLevel->setEnabled(true);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(false);							//触发延迟
 	updates_filename();
-	ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
-	ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
+	single_filesize();
 }
 
 void paraDialog::set_doubleCh()														//双通道 影响触发电平，以及chA、B文件名编辑框数据量
@@ -153,8 +153,7 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 	ui->lineEdit_triggerLevel->setEnabled(false);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(true);							//触发延迟
 	updated_filename();
-	ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
-	ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
+	double_filesize();
 }
 
 void paraDialog::set_sampleFreq()													//采样频率 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -171,22 +170,15 @@ void paraDialog::set_detRange()														//探测距离 影响采样点数�
 	psetting.detRange = 1000*(ui->lineEdit_detRange->text().toFloat());
 	psetting.sampleNum = psetting.sampleFreq*2*psetting.detRange/300;
 	direct_size = 48+psetting.plsAccNum*psetting.sampleNum*2;						//单个方向上的数据量
-
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
 }
 
 void paraDialog::set_filesize()														//参考信息中的单文件量和总数据量
 {
 	if(ui->radioButton_singleCh->isChecked())
-	{
-		ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
-		ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
-	}
+		single_filesize();
 	else
-	{
-		ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
-		ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
-	}
+		double_filesize();
 }
 
 void paraDialog::set_plsAccNum()													//脉冲数影响单文件量、总数据量（双通道乘2）//psetting获取编辑框值
@@ -248,10 +240,21 @@ void paraDialog::set_triggerHoldOffSamples()										//psetting获取触发延�
 	if(ui->lineEdit_triggerHoldOffSamples->text().toInt() < 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发延迟为非负数"));
-		ui->lineEdit_triggerLevel->setText(NULL);
+		ui->lineEdit_triggerHoldOffSamples->setText(NULL);
 	}
 	else
 		psetting.triggerHoldOffSamples = ui->lineEdit_triggerHoldOffSamples->text().toInt();
+}
+
+void paraDialog::set_motorSP()														//电机转速
+{
+	if(ui->lineEdit_SP->text().toInt() > 90)
+	{
+		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("最高转速不能超过每秒90度"));
+		ui->lineEdit_SP->setText(NULL);
+	}
+	else
+		psetting.SP = ui->lineEdit_SP->text().toInt();
 }
 
 void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
@@ -274,19 +277,9 @@ void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
 {
 	QDir mypath(str);
 	if(!mypath.exists())															//路径不存在，红色
-	{
-		ui->lineEdit_DatafilePath->setStyleSheet("color: red;"
-												 "font-size:16px;"
-												 "font-family:'calibri';"
-												 );
-	}
+		ui->lineEdit_DatafilePath->setStyleSheet("color: red;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
 	else																			//存在，黑色
-	{
-		ui->lineEdit_DatafilePath->setStyleSheet("color: black;"
-												 "font-size:16px;"
-												 "font-family:'calibri';"
-												 );
-	}
+		ui->lineEdit_DatafilePath->setStyleSheet("color: black;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
 	psetting.DatafilePath = str;
 	ui->lineEdit_DatafilePath->setText(str);
 }
@@ -357,6 +350,7 @@ void paraDialog::update_show()
 	ui->lineEdit_elevationAngle->setText(QString::number(psetting.elevationAngle));
 	ui->lineEdit_start_azAngle->setText(QString::number(psetting.start_azAngle));
 	ui->lineEdit_step_azAngle->setText(QString::number(psetting.step_azAngle));
+	ui->lineEdit_SP->setText(QString::number(psetting.SP));
 	ui->radioButton_anglekey->setChecked(psetting.anglekey);
 	ui->radioButton_circlekey->setChecked(psetting.circlekey);
 	ui->lineEdit_angleNum->setText(QString::number(psetting.angleNum));
@@ -407,16 +401,14 @@ void paraDialog::update_show()
 		ui->lineEdit_triggerLevel->setEnabled(true);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(false);
 		updates_filename();
-		ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
-		ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
+		single_filesize();
 	}
 	else
 	{
 		ui->lineEdit_triggerLevel->setEnabled(false);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(true);
 		updated_filename();
-		ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
-		ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
+		double_filesize();
 	}
 }
 
@@ -573,4 +565,50 @@ void paraDialog::set_dect_time()												//计算探测时间
 							ui->lineEdit_totalTime->setText(QString::number(h)+"h"+QString::number(m)+"m"+QString::number(s)+"s");
 					}
 				}
+}
+
+void paraDialog::single_filesize()
+{
+	if(direct_size > 170*1024*1024)
+	{
+		ui->pushButton_save->setEnabled(false);
+		ui->pushButton_sure->setEnabled(false);
+		ui->comboBox_sampleFreq->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_detRange->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_plsAccNum->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+	}
+	else
+	{
+		ui->pushButton_save->setEnabled(true);
+		ui->pushButton_sure->setEnabled(true);
+		ui->comboBox_sampleFreq->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_detRange->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_plsAccNum->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+	}
+
+	ui->lineEdit_sglfilesize->setText(QString::number(direct_size/(1024*1024),'f',2));
+	ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
+}
+
+void paraDialog::double_filesize()
+{
+	if(direct_size > 170*1024*1024)
+	{
+		ui->pushButton_save->setEnabled(false);
+		ui->pushButton_sure->setEnabled(false);
+		ui->comboBox_sampleFreq->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_detRange->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_plsAccNum->setStyleSheet("color: red;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+	}
+	else
+	{
+		ui->pushButton_save->setEnabled(true);
+		ui->pushButton_sure->setEnabled(true);
+		ui->comboBox_sampleFreq->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_detRange->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+		ui->lineEdit_plsAccNum->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
+	}
+
+	ui->lineEdit_sglfilesize->setText(QString::number(2*direct_size/(1024*1024),'f',2));
+	ui->lineEdit_totalsize->setText(QString::number(2*psetting.angleNum*direct_size/(1024*1024),'f',2));
 }
