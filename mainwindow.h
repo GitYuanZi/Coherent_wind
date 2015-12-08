@@ -61,7 +61,7 @@ private:
     Ui::MainWindow *ui;
     paraDialog *ParaSetDlg;
 	portDialog *PortDialog;							//串口的对话框
-	SerialPortThread thread_coll;					//串口读写线程
+	SerialPortThread thread_collect;					//串口读写线程
 
 	QString portname;								//连接的串口名
 	QString request_send;							//发送给串口的命令
@@ -113,10 +113,10 @@ private:
 	QString timestr;			//采集时间
 	uint direction_angle;		//方位角
     void *adq_cu;
-	int trig_mode;				//触发模式
-	qint16 trig_level;				//触发电平
-	int trig_flank;				//触发边沿
-	int trig_channel;			//触发通道
+//	int trig_mode;				//触发模式
+//	qint16 trig_level;			//触发电平
+//	int trig_flank;				//触发边沿
+//	int trig_channel;			//触发通道
     int clock_source ;
 	int pll_divider;					//PLL分频数，和采样频率有关
 	unsigned int number_of_records;		//脉冲数

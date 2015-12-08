@@ -37,9 +37,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	conncetdevice();													//连接采集卡设备
 	//	search_port();													//串口搜索
 	portname = "COM3";
-	connect(&thread_coll, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
-	connect(&thread_coll, SIGNAL(portOpen()),this,SLOT(receive_portopen()));//连接串口未打开时对应的槽函数
-	connect(&thread_coll, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
+	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
+	connect(&thread_collect, SIGNAL(portOpen()),this,SLOT(receive_portopen()));//连接串口未打开时对应的槽函数
+	connect(&thread_collect, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
 
 	PortDialog = new portDialog(this);
 	connect(PortDialog, SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
@@ -173,12 +173,14 @@ void MainWindow::dockview_ct2(bool topLevel)				//用于通道2全屏
 		dockqwt_2->showMaximized();
 }
 
-void MainWindow::on_action_searchDevice_triggered()			//action_searchDevice键
+//连接USB采集卡
+void MainWindow::on_action_searchDevice_triggered()
 {
 	conncetdevice();
 }
 
-void MainWindow::on_action_open_triggered()					//action_open键
+//打开数据存储路径
+void MainWindow::on_action_open_triggered()
 {
 	if(mysetting.DatafilePath.isEmpty())					//路径为空时，打开默认路径
 	{
@@ -198,7 +200,8 @@ void MainWindow::on_action_saveAs_triggered()				//action_saveAs键
 	QString fileName = QFileDialog::getSaveFileName(this,"另存","/","data files(*.wld)");
 }
 
-void MainWindow::on_action_set_triggered()					//action_set键
+//打开参数设置对话框
+void MainWindow::on_action_set_triggered()
 {
 	ParaSetDlg = new paraDialog(this);
 	//	ParaSetDlg->setAttribute(Qt::WA_DeleteOnClose);	//退出时自动delete，防止内存泄漏
@@ -236,47 +239,49 @@ void MainWindow::on_action_set_triggered()					//action_set键
 			dockleft_dlg->set_filename1(FileName_A);
 			dockleft_dlg->set_filename2(FileName_B);
 		}
-		refresh();												//更新绘图窗口
-		//		start_position();								//驱动器初始位置
+		refresh();					//更新绘图窗口
+		//start_position();			//驱动器初始位置
 	}
 	else
-		if(mysetting.singleCh)										//点击非确定键，则删除创建的plotwindow2窗口
+		if(mysetting.singleCh)		//点击非确定键，则删除创建的plotwindow2窗口
 		{
 			delete plotWindow_2;
 			delete dockqwt_2;
 		}
-	delete ParaSetDlg;												//防止内存泄漏
+	delete ParaSetDlg;				//防止内存泄漏
 }
 
-void MainWindow::start_position()							//电机转动到初始位置
+//电机转动到初始位置
+void MainWindow::start_position()
 {
 	int startAngle = mysetting.start_azAngle*800/3;			//初始角
 	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
 	qDebug() << "start_data = " << start_data;				//PA为绝对转动
-	thread_coll.transaction(portname,start_data);			//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
+	thread_collect.transaction(portname,start_data);			//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
 }
 
-void MainWindow::on_action_serialport_triggered()			//action_serialport键
+//打开电机的串口控制对话框
+void MainWindow::on_action_serialport_triggered()
 {
-//	PortDialog = new portDialog(this);
 	PortDialog->inital_data(portname,mysetting.SP,connect_Motor,mysetting.angleNum,stopped);
 	if (PortDialog->exec() == QDialog::Accepted)
 	{
-		mysetting.SP = PortDialog->get_returnSet();			//从串口对话框接收SP值
-		connect_Motor = PortDialog->get_returnMotor_connect();//从串口对话框接收连接电机bool值
+		mysetting.SP = PortDialog->get_returnSet();				//从串口对话框接收SP值
+		connect_Motor = PortDialog->get_returnMotor_connect();	//从串口对话框接收连接电机bool值
 	}
-//	delete PortDialog;										//防止内存泄露
 }
 
-void MainWindow::path_create()						//数据存储文件夹的创建
+//数据存储文件夹的创建
+void MainWindow::path_create()
 {
 	QString currentpath = mysetting.DatafilePath;
 	QDir mypath;
-	if(!mypath.exists(currentpath))					//文件夹不存在，创建文件夹
+	if(!mypath.exists(currentpath))					//如果文件夹不存在，创建文件夹
 		mypath.mkpath(currentpath);
 }
 
-void MainWindow::refresh()							//paradialog重新设置后，对绘图曲线部分进行更新
+//paradialog重新设置后，对绘图曲线部分进行更新
+void MainWindow::refresh()
 {
 	delete plotWindow_1;
 	delete dockqwt_1;
@@ -285,7 +290,8 @@ void MainWindow::refresh()							//paradialog重新设置后，对绘图曲线�
 	creatqwtdock();
 }
 
-void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
+//采集菜单中的开始按钮
+void MainWindow::on_action_start_triggered()
 {
 	if((!check_threadStore())&&stopped)				//检查存储线程是否完成数据存储
 	{
@@ -293,7 +299,7 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 		return;
 	}
 	stopped = false;								//stopped为false。能够采集
-	path_create();									//数据存储文件夹的创建
+	path_create();									//创建数据存储文件夹
 	numbercollect = 0;
 
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
@@ -339,14 +345,16 @@ void MainWindow::on_action_start_triggered()		//采集菜单中的开始键
 	}
 }
 
-void MainWindow::collect_cond()						//位置判断函数，利用定时器定时发送命令
+//位置判断函数，利用定时器定时发送命令
+void MainWindow::collect_cond()
 {
 	QString judge("PX;");
-	thread_coll.transaction(portname,judge);		//发送PX;接收返回值
+	thread_collect.transaction(portname,judge);		//发送PX;接收返回值
 	qDebug() << "judge = " << judge;
 }
 
-void MainWindow::receive_response(const QString &s)	//处理串口返回值
+//处理串口返回值
+void MainWindow::receive_response(const QString &s)
 {
 	if(s.left(2) == "PX")
 	{
@@ -376,7 +384,7 @@ void MainWindow::receive_response(const QString &s)	//处理串口返回值
 		if(s.left(2) == "SP")
 		{
 			QString req_MOPX = "MO;PX;";					//发送串口命令"MO;PX;"
-			thread_coll.transaction(portname,req_MOPX);
+			thread_collect.transaction(portname,req_MOPX);
 		}
 		else
 			if(s.left(2) == "MO")							//接收串口命令"MO;PX;"的返回值
@@ -415,35 +423,37 @@ void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的�
 	if(re_need.left(3) == "COM")
 		portname = re_need;
 	else
-		thread_coll.transaction(portname,re_need);
+		thread_collect.transaction(portname,re_need);
 }
 
-void MainWindow::on_action_stop_triggered()			//采集菜单中的停止键
+//采集菜单中的停止按钮
+void MainWindow::on_action_stop_triggered()
 {
 	stopped = true;
 }
 
-void MainWindow::singleset()						//单通道参数设置
+//单通道参数设置
+void MainWindow::singleset()
 {
-	trig_mode = 3;
+	int trig_mode = 3;				//触发模式
 	if(ADQ212_SetTriggerMode(adq_cu,1,trig_mode) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("TrigMode"));
 		return;
 	}
-	trig_level = mysetting.triggleLevel;
+	qint16 trig_level = mysetting.triggleLevel;
 	if(ADQ212_SetLvlTrigLevel(adq_cu,1,trig_level) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("TrigLevel"));
 		return;
 	}
-	trig_flank = 1;
+	int trig_flank = 1;				//触发边沿 -> 上升沿
 	if(ADQ212_SetLvlTrigFlank(adq_cu,1,trig_flank) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("TrigFlank"));
 		return;
 	}
-	trig_channel = 1;
+	int trig_channel = 1;			//触发通道： 1通道
 	if(ADQ212_SetLvlTrigChannel(adq_cu,1,trig_channel) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("TrigChannel"));
@@ -459,6 +469,7 @@ void MainWindow::singleset()						//单通道参数设置
 	}
 
 	int f = mysetting.sampleFreq;
+//	pll_divider = int(1100/f);		//待测试，成功后删除以下代码
 	switch (f) {
 	case 550:
 		pll_divider = 2;
@@ -510,11 +521,12 @@ void MainWindow::singleset()						//单通道参数设置
 	qDebug() << "singlecollect over";
 }
 
-void MainWindow::singlecollect()									//单通道采集和存储
+//单通道采集和存储
+void MainWindow::singlecollect()
 {
 	onecollect_over = false;										//单次采集开始
 	if(direction_angle > 360)
-		direction_angle = direction_angle%360;
+		direction_angle = direction_angle % 360;
 
 	dockleft_dlg->set_currentAngle(direction_angle);
 	dockleft_dlg->set_groupcnt(numbercollect+1);
@@ -550,7 +562,7 @@ void MainWindow::singlecollect()									//单通道采集和存储
 	qDebug() << "Collecting data,plesase wait...";
 
 	if(connect_Motor)
-		thread_coll.transaction(portname,request_send);				//采集卡触发完成，驱动器开始转动
+		thread_collect.transaction(portname,request_send);				//采集卡触发完成，驱动器开始转动
 
 	qint16 *rd_data1 = new qint16[samples_per_record*number_of_records];
 	for(unsigned int i = 0; i < number_of_records; i++)				//写入采集数据
@@ -650,7 +662,8 @@ void MainWindow::singlecollect()									//单通道采集和存储
 	onecollect_over = true;											//单次采集完成
 }
 
-void MainWindow::collect_over()										//采集结束处理函数
+//采集结束处理函数
+void MainWindow::collect_over()
 {
 	timer1->stop();
 	stopped = true;
@@ -667,9 +680,10 @@ void MainWindow::collect_over()										//采集结束处理函数
 	//	DeleteADQControlUnit(adq_cu);
 }
 
-void MainWindow::doubleset()										//双通道采集
+//双通道采集
+void MainWindow::doubleset()
 {
-	trig_mode = 2;
+	int trig_mode = 2;				//触发模式
 	if(ADQ212_SetTriggerMode(adq_cu,1,trig_mode) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("TrigMode"));
@@ -738,7 +752,8 @@ void MainWindow::doubleset()										//双通道采集
 	}
 }
 
-void MainWindow::doublecollect()									//双通道采集和存储
+//双通道采集和存储
+void MainWindow::doublecollect()
 {
 	onecollect_over = false;
 	if(direction_angle > 360)
@@ -780,7 +795,7 @@ void MainWindow::doublecollect()									//双通道采集和存储
 	qDebug() << "Collecting data,plesase wait...";
 
 	if(connect_Motor)
-		thread_coll.transaction(portname,request_send);							//采集卡触发完成，驱动器开始转动
+		thread_collect.transaction(portname,request_send);							//采集卡触发完成，驱动器开始转动
 
 	qint16 *rd_dataa = new qint16[samples_per_record*number_of_records];
 	qint16 *rd_datab = new qint16[samples_per_record*number_of_records];
@@ -886,7 +901,8 @@ void MainWindow::doublecollect()									//双通道采集和存储
 	onecollect_over = true;
 }
 
-void MainWindow::conncetdevice()									//查找连接ADQ212设备
+//查找并连接 ADQ212 设备
+void MainWindow::conncetdevice()
 {
 	adq_cu = CreateADQControlUnit();								//用于查找和建立与ADQ设备之间的连接
 	qDebug() << "adq_cu = " << adq_cu;
@@ -916,7 +932,8 @@ void MainWindow::conncetdevice()									//查找连接ADQ212设备
 	}
 }
 
-void MainWindow::search_port()										//搜索串口，确定串口名
+//搜索串口，确定串口名
+void MainWindow::search_port()
 {
 	QSerialPort my_serial;
 	foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
@@ -957,7 +974,8 @@ void MainWindow::search_port()										//搜索串口，确定串口名
 		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
 }
 
-bool MainWindow::check_threadStore()								//检查存储线程运行状态
+//检查存储线程运行状态
+bool MainWindow::check_threadStore()
 {
 	if(num_running == 0)
 		return true;
@@ -965,9 +983,10 @@ bool MainWindow::check_threadStore()								//检查存储线程运行状态
 		return false;
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)						//检查存储线程是否完成数据存储
+
+void MainWindow::closeEvent(QCloseEvent *event)
 {
-	if((num_running != 0)&&stopped)
+	if((num_running != 0)&&stopped)		//检查存储线程是否完成数据存储
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
 		event->ignore();
@@ -979,7 +998,8 @@ void MainWindow::closeEvent(QCloseEvent *event)						//检查存储线程是否�
 	}
 }
 
-void MainWindow::set_statusbar()									//设置状态栏
+//设置状态栏
+void MainWindow::set_statusbar()
 {
 	bar = ui->statusBar;											//获取状态栏
 	storenum = new QLabel;											//新建标签
@@ -989,7 +1009,8 @@ void MainWindow::set_statusbar()									//设置状态栏
 	bar->addWidget(storenum);
 }
 
-void MainWindow::receive_storefinish()								//线程存储完成，线程数减1
+//线程存储完成，线程数减1
+void MainWindow::receive_storefinish()
 {
 	num_running--;
 	storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
