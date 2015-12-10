@@ -33,6 +33,8 @@ typedef struct
 	//文件存储
     QString DatafilePath;
     bool autocreate_datafile;
+	bool channel_A;
+	bool channel_B;
     QString dataFileName_Prefix;
 	QString dataFileName_Suffix;
 }ACQSETTING;

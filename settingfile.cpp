@@ -52,6 +52,8 @@ void settingFile::writeTo_file(const ACQSETTING &setting,const QString &a )
 	settings.beginGroup("File_store");
 	settings.setValue("DatafilePath",fsetting.DatafilePath);					//文件保存路径
 	settings.setValue("autocreate_datafile",fsetting.autocreate_datafile);		//自动创建日期文件夹
+	settings.setValue("channel_A",fsetting.channel_A);
+	settings.setValue("channel_B",fsetting.channel_B);
 	settings.setValue("dataFileNamePrefix",fsetting.dataFileName_Prefix);		//前缀文件名
 	settings.setValue("dataFileNameSuffix",fsetting.dataFileName_Suffix);		//后缀文件名
 	settings.endGroup();
@@ -93,6 +95,8 @@ void settingFile::readFrom_file(const QString &b)
 	settings.beginGroup("File_store");
 	fsetting.DatafilePath = settings.value("DatafilePath").toString();					//文件保存路径
 	fsetting.autocreate_datafile = settings.value("autocreate_datafile").toBool();		//自动创建最小文件夹
+	fsetting.channel_A = settings.value("channel_A").toBool();
+	fsetting.channel_B = settings.value("channel_B").toBool();
 	fsetting.dataFileName_Prefix = settings.value("dataFileNamePrefix").toString();		//前缀文件名
 	fsetting.dataFileName_Suffix = settings.value("dataFileNameSuffix").toString();		//后缀文件名
 	settings.endGroup();
@@ -108,9 +112,9 @@ void settingFile::test_create_file(const QString &c,const QString &d)
 	QString path_c = c;
 	QString prefix_str = d;
 	QFileInfo file(path_c);
+	QSettings settings(path_c,QSettings::IniFormat);
 	if(file.exists() == false)
 	{
-		QSettings settings(path_c,QSettings::IniFormat);
 		settings.beginGroup("Laser_parameters");
 		settings.setValue("laserRPF",10000);				//激光重频
 		settings.setValue("laserPulseWidth",140);			//激光脉宽
@@ -145,12 +149,22 @@ void settingFile::test_create_file(const QString &c,const QString &d)
 		path_c.append("/").append(prefix_str);				//路径末尾加上日期文件夹
 		settings.setValue("DatafilePath",path_c);			//文件保存路径
 		settings.setValue("autocreate_datafile",true);		//自动创建日期文件夹
+		settings.setValue("channel_A",false);				//通道A
+		settings.setValue("channel_B",false);				//通道B
 		settings.setValue("dataFileNamePrefix",prefix_str);	//前缀文件名
 		settings.setValue("dataFileNameSuffix","001");		//后缀文件名
 		settings.endGroup();
 	}
 	else
+	{
+		settings.beginGroup("File_store");
+		path_c.chop(13);									//截掉末尾配置文件名
+		path_c.append("/").append(prefix_str);				//路径末尾加上日期文件夹
+		settings.setValue("DatafilePath",path_c);			//文件保存路径
+		settings.setValue("dataFileNamePrefix",prefix_str);	//前缀文件名
+		settings.endGroup();
 		qDebug() <<"Settings file exist";
+	}
 }
 
 bool settingFile::isSettingsChanged(const ACQSETTING &setting)
@@ -202,6 +216,10 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 	if(fsetting.DatafilePath != dlgsetting.DatafilePath)			//文件保存路径
 		return true;
 	if(fsetting.autocreate_datafile != dlgsetting.autocreate_datafile)			//自动创建日期文件夹
+		return true;
+	if(fsetting.channel_A != dlgsetting.channel_A)
+		return true;
+	if(fsetting.channel_B != dlgsetting.channel_B)
 		return true;
 	if(fsetting.dataFileName_Prefix != dlgsetting.dataFileName_Prefix)
 		return true;

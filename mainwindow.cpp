@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	timer1 = new QTimer(this);											//触发各个方向上开始采集
 	timer2 = new QTimer(this);											//用于判断do—while
 	timer2->setSingleShot(true);
-	connect(timer2,SIGNAL(timeout()),this,SLOT(collect_over()));		//建立用于检查do-while的定时器
+	connect(timer2,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
 	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
 	connect_Motor = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
@@ -195,11 +195,6 @@ void MainWindow::on_action_open_triggered()
 	}
 }
 
-void MainWindow::on_action_saveAs_triggered()				//action_saveAs键
-{
-	QString fileName = QFileDialog::getSaveFileName(this,"另存","/","data files(*.wld)");
-}
-
 //打开参数设置对话框
 void MainWindow::on_action_set_triggered()
 {
@@ -255,7 +250,7 @@ void MainWindow::on_action_set_triggered()
 void MainWindow::start_position()
 {
 	int startAngle = mysetting.start_azAngle*800/3;			//初始角
-	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";//初始角转换为QString型
+	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";AC=48000;DC=48000;MO=1;PA="+QString::number(startAngle)+";BG;";
 	qDebug() << "start_data = " << start_data;				//PA为绝对转动
 	thread_collect.transaction(portname,start_data);			//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
 }
@@ -399,7 +394,7 @@ void MainWindow::receive_response(const QString &s)
 				{
 					timer1->stop();							//关闭定时器，并提示串口返回值错误
 					stopped = true;							//采集停止
-					QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Value returned by serial port is incorrect"));
+					QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口返回值错误"));
 				}
 }
 
@@ -407,7 +402,7 @@ void MainWindow::receive_portopen()					//串口未正确打开
 {
 	timer1->stop();									//关闭定时器time1,并提示未能正确打开串口
 	stopped = true;									//采集停止
-	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Serial port can't open"));
+	QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口未能正确连接"));
 }
 
 void MainWindow::receive_timeout()					//接收串口命令超时
@@ -469,41 +464,7 @@ void MainWindow::singleset()
 	}
 
 	int f = mysetting.sampleFreq;
-//	pll_divider = int(1100/f);		//待测试，成功后删除以下代码
-	switch (f) {
-	case 550:
-		pll_divider = 2;
-		break;
-	case 367:
-		pll_divider = 3;
-		break;
-	case 275:
-		pll_divider = 4;
-		break;
-	case 220:
-		pll_divider = 5;
-		break;
-	case 183:
-		pll_divider = 6;
-		break;
-	case 157:
-		pll_divider = 7;
-		break;
-	case 138:
-		pll_divider = 8;
-		break;
-	case 122:
-		pll_divider = 9;
-		break;
-	case 110:
-		pll_divider = 10;
-		break;
-	case 100:
-		pll_divider = 11;
-		break;
-	default:
-		break;
-	}
+	pll_divider = int(1100/f);
 	if(ADQ212_SetPllFreqDivider(adq_cu,1,pll_divider) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("SampleFreq"));
@@ -528,8 +489,10 @@ void MainWindow::singlecollect()
 	if(direction_angle > 360)
 		direction_angle = direction_angle % 360;
 
-	dockleft_dlg->set_currentAngle(direction_angle);
-	dockleft_dlg->set_groupcnt(numbercollect+1);
+	dockleft_dlg->set_currentAngle(direction_angle);				//qwtDial更新
+	dockleft_dlg->set_groupcnt(numbercollect+1);					//进度条更新
+	dockleft_dlg->set_filename1(FileName_1);
+	dockleft_dlg->set_filename2(NULL);								//更新文件名
 
 	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)							//解除触发，内存计数重置Disarm unit
 	{
@@ -597,7 +560,7 @@ void MainWindow::singlecollect()
 		num_running++;										//线程数加1，状态栏显示线程数
 		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
-		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
+		threadA.otherpara(timestr,direction_angle);			//时间，方位角传递给threadstore
 		threadA.s_memcpy(rd_data1);							//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
 	}
@@ -607,7 +570,7 @@ void MainWindow::singlecollect()
 			num_running++;
 			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			threadB.fileDataPara(mysetting);
-			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+			threadB.otherpara(timestr,direction_angle);
 			threadB.s_memcpy(rd_data1);
 			threadB.start();
 		}
@@ -617,7 +580,7 @@ void MainWindow::singlecollect()
 				num_running++;
 				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				threadC.fileDataPara(mysetting);
-				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+				threadC.otherpara(timestr,direction_angle);
 				threadC.s_memcpy(rd_data1);
 				threadC.start();
 			}
@@ -627,7 +590,7 @@ void MainWindow::singlecollect()
 					num_running++;
 					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 					threadD.fileDataPara(mysetting);
-					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+					threadD.otherpara(timestr,direction_angle);
 					threadD.s_memcpy(rd_data1);
 					threadD.start();
 				}
@@ -642,24 +605,30 @@ void MainWindow::singlecollect()
 	plotWindow_1->datashow(rd_data1,mysetting.sampleNum,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
 	delete[] rd_data1;
 
+	int filenumber = mysetting.dataFileName_Suffix.toInt();
+	int len = mysetting.dataFileName_Suffix.length();
+	filenumber++ ;
+	if(len<=8)
+	{
+		mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
+		mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
+	}
+	FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
+
 	numbercollect++;												//下一组采集组数
 	if((numbercollect >= mysetting.angleNum)||(stopped == true))	//判断是否完成设置组数
 		collect_over();
-	else
-	{
-		int filenumber = mysetting.dataFileName_Suffix.toInt();
-		int len = mysetting.dataFileName_Suffix.length();
-		filenumber++ ;
-		if(len<=8)
-		{
-			mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
-			mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
-		}
-		FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
-		dockleft_dlg->set_filename1(FileName_1);
-		dockleft_dlg->set_filename2(NULL);							//更新文件名
-	}
 	onecollect_over = true;											//单次采集完成
+}
+
+//采集卡未检测到外部触发信号
+void MainWindow::notrig_over()
+{
+	QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
+	timer1->stop();
+	stopped = true;
+	ADQ212_DisarmTrigger(adq_cu,1);
+	ADQ212_MultiRecordClose(adq_cu,1);
 }
 
 //采集结束处理函数
@@ -676,7 +645,7 @@ void MainWindow::collect_over()
 	if(overflow == 1)
 		qDebug() << "Sample overflow in batch.";
 	qDebug() << "Collect finished.";
-	QMessageBox::information(this,QString::fromLocal8Bit("Information"),QString::fromLocal8Bit("Collect finished."));		//设置界面提示窗口，提示采集完成
+	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集完成."));		//设置界面提示窗口，提示采集完成
 	//	DeleteADQControlUnit(adq_cu);
 }
 
@@ -698,40 +667,7 @@ void MainWindow::doubleset()
 		return;
 	}
 	int f = mysetting.sampleFreq;
-	switch (f) {
-	case 550:
-		pll_divider = 2;
-		break;
-	case 367:
-		pll_divider = 3;
-		break;
-	case 275:
-		pll_divider = 4;
-		break;
-	case 220:
-		pll_divider = 5;
-		break;
-	case 183:
-		pll_divider = 6;
-		break;
-	case 157:
-		pll_divider = 7;
-		break;
-	case 138:
-		pll_divider = 8;
-		break;
-	case 122:
-		pll_divider = 9;
-		break;
-	case 110:
-		pll_divider = 10;
-		break;
-	case 100:
-		pll_divider = 11;
-		break;
-	default:
-		break;
-	}
+	pll_divider = int(1100/f);
 	if(ADQ212_SetPllFreqDivider(adq_cu,1,pll_divider) == 0)
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Samplefreq"));
@@ -760,6 +696,8 @@ void MainWindow::doublecollect()
 		direction_angle = direction_angle%360;
 	dockleft_dlg->set_currentAngle(direction_angle);
 	dockleft_dlg->set_groupcnt(numbercollect+1);
+	dockleft_dlg->set_filename1(FileName_A);
+	dockleft_dlg->set_filename2(FileName_B);
 
 	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)
 	{
@@ -834,7 +772,7 @@ void MainWindow::doublecollect()
 		num_running++;
 		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
-		threadA.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);	//组数，时间，方位角传递给threadstore
+		threadA.otherpara(timestr,direction_angle);	//组数，时间，方位角传递给threadstore
 		threadA.d_memcpy(rd_dataa,rd_datab);				//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
 	}
@@ -844,7 +782,7 @@ void MainWindow::doublecollect()
 			num_running++;
 			storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 			threadB.fileDataPara(mysetting);
-			threadB.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+			threadB.otherpara(timestr,direction_angle);
 			threadB.d_memcpy(rd_dataa,rd_datab);
 			threadB.start();
 		}
@@ -854,7 +792,7 @@ void MainWindow::doublecollect()
 				num_running++;
 				storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 				threadC.fileDataPara(mysetting);
-				threadC.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+				threadC.otherpara(timestr,direction_angle);
 				threadC.d_memcpy(rd_dataa,rd_datab);
 				threadC.start();
 			}
@@ -864,7 +802,7 @@ void MainWindow::doublecollect()
 					num_running++;
 					storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
 					threadD.fileDataPara(mysetting);
-					threadD.otherpara(mysetting.dataFileName_Suffix,timestr,direction_angle);
+					threadD.otherpara(timestr,direction_angle);
 					threadD.d_memcpy(rd_dataa,rd_datab);
 					threadD.start();
 				}
@@ -880,24 +818,20 @@ void MainWindow::doublecollect()
 	plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示b最后一组脉冲
 	delete[] rd_datab;
 
+	int filenumber = mysetting.dataFileName_Suffix.toInt();
+	int len = mysetting.dataFileName_Suffix.length();
+	filenumber++ ;
+	if(len<=8)
+	{
+		mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
+		mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
+	}
+	FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
+	FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
+
 	numbercollect++;
 	if((numbercollect >= mysetting.angleNum)||(stopped == true))				//判断是否完成设置组数
 		collect_over();
-	else
-	{
-		int filenumber = mysetting.dataFileName_Suffix.toInt();
-		int len = mysetting.dataFileName_Suffix.length();
-		filenumber++ ;
-		if(len<=8)
-		{
-			mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
-			mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
-		}
-		FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
-		FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
-		dockleft_dlg->set_filename1(FileName_A);
-		dockleft_dlg->set_filename2(FileName_B);
-	}
 	onecollect_over = true;
 }
 
@@ -982,7 +916,6 @@ bool MainWindow::check_threadStore()
 	else
 		return false;
 }
-
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {

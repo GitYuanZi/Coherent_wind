@@ -119,8 +119,8 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 	if(d_zoomer->zoomRectIndex() == 0)
 	{
 		qwtPlotCurve->setSamples(xValues,yValues,snum);
-		qwtPlot->setAxisAutoScale(qwtPlot->xBottom,true);
-		qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);
+//		qwtPlot->setAxisAutoScale(qwtPlot->xBottom,true);
+//		qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);
 		d_zoomer->setZoomBase(true);
 		qwtPlot->replot();
 	}

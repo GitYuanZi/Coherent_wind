@@ -37,7 +37,7 @@ private slots:
 
 	void on_action_searchDevice_triggered();		//搜索键
 	void on_action_open_triggered();				//打开键
-	void on_action_saveAs_triggered();				//另存为键
+//	void on_action_saveAs_triggered();				//另存为键
 	void on_action_set_triggered();					//设置键
 	void on_action_start_triggered();				//开始键
 	void on_action_stop_triggered();				//停止键
@@ -46,6 +46,7 @@ private slots:
 	void singlecollect(void);						//单通道采集及存储
 	void collect_cond();
 	void doublecollect(void);						//双通道采集及存储
+	void notrig_over();								//无外部触发信号
 	void collect_over();							//采集结束用于关闭multi-record
 
 	void receive_response(const QString &s);		//串口线程发送命令后的返回值

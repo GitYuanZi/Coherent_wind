@@ -57,6 +57,8 @@ private slots:
 
 	void set_filesize();
 	void set_dataFileName_Suffix();
+	void set_channelA();
+	void set_channelB();
 
     void on_pushButton_pathModify_clicked();
     void on_pushButton_save_clicked();

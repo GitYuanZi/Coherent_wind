@@ -57,7 +57,7 @@
     </font>
    </property>
    <property name="currentIndex">
-    <number>2</number>
+    <number>3</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -839,23 +839,10 @@
        <string> .wld</string>
       </property>
      </widget>
-     <widget class="QLabel" name="label_15">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>140</y>
-        <width>61</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>通道B：</string>
-      </property>
-     </widget>
      <widget class="QLabel" name="label_5">
       <property name="geometry">
        <rect>
-        <x>30</x>
+        <x>35</x>
         <y>60</y>
         <width>41</width>
         <height>21</height>
@@ -895,9 +882,9 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>141</y>
-        <width>251</width>
+        <x>110</x>
+        <y>181</y>
+        <width>231</width>
         <height>21</height>
        </rect>
       </property>
@@ -913,7 +900,7 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>70</x>
+        <x>75</x>
         <y>61</y>
         <width>81</width>
         <height>21</height>
@@ -931,8 +918,8 @@
      <widget class="QLabel" name="label_35">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>180</y>
+        <x>40</x>
+        <y>99</y>
         <width>71</width>
         <height>21</height>
        </rect>
@@ -947,9 +934,9 @@
       </property>
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>181</y>
-        <width>251</width>
+        <x>110</x>
+        <y>100</y>
+        <width>231</width>
         <height>21</height>
        </rect>
       </property>
@@ -962,34 +949,15 @@
        <string/>
       </property>
      </widget>
-     <widget class="QLabel" name="label_14">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>100</y>
-        <width>61</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
-      </property>
-      <property name="frameShadow">
-       <enum>QFrame::Plain</enum>
-      </property>
-      <property name="text">
-       <string>通道A：</string>
-      </property>
-     </widget>
      <widget class="QLineEdit" name="lineEdit_dataFileName_chA">
       <property name="enabled">
        <bool>false</bool>
       </property>
       <property name="geometry">
        <rect>
-        <x>90</x>
-        <y>101</y>
-        <width>251</width>
+        <x>110</x>
+        <y>141</y>
+        <width>231</width>
         <height>21</height>
        </rect>
       </property>
@@ -1008,7 +976,7 @@
      <widget class="QLabel" name="label_16">
       <property name="geometry">
        <rect>
-        <x>160</x>
+        <x>165</x>
         <y>60</y>
         <width>41</width>
         <height>20</height>
@@ -1021,6 +989,32 @@
       </property>
       <property name="text">
        <string>_chX_</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_channelA">
+      <property name="geometry">
+       <rect>
+        <x>33</x>
+        <y>140</y>
+        <width>71</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>通道A：</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_channelB">
+      <property name="geometry">
+       <rect>
+        <x>33</x>
+        <y>180</y>
+        <width>71</width>
+        <height>21</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>通道B：</string>
       </property>
      </widget>
     </widget>

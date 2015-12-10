@@ -63,6 +63,8 @@ void paraDialog::initial_para()
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&paraDialog::set_motorSP);
 
 	connect(ui->lineEdit_sampleNum,&QLineEdit::textChanged,this,&paraDialog::set_filesize);						//采样点数
+	connect(ui->checkBox_channelA,&QCheckBox::clicked,this,&paraDialog::set_channelA);
+	connect(ui->checkBox_channelB,&QCheckBox::clicked,this,&paraDialog::set_channelB);
 }
 
 void paraDialog::set_elevationAngle()												//俯仰角 决定探测方向是水平还是径向
@@ -142,6 +144,8 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 	psetting.doubleCh = false;
 	ui->lineEdit_triggerLevel->setEnabled(true);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(false);							//触发延迟
+	ui->checkBox_channelA->setEnabled(false);
+	ui->checkBox_channelB->setEnabled(false);
 	updates_filename();
 	single_filesize();
 }
@@ -152,6 +156,8 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 	psetting.doubleCh = true;
 	ui->lineEdit_triggerLevel->setEnabled(false);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(true);							//触发延迟
+	ui->checkBox_channelA->setEnabled(true);
+	ui->checkBox_channelB->setEnabled(true);
 	updated_filename();
 	double_filesize();
 }
@@ -179,6 +185,20 @@ void paraDialog::set_filesize()														//参考信息中的单文件量和
 		single_filesize();
 	else
 		double_filesize();
+}
+
+void paraDialog::set_channelA()
+{
+	psetting.channel_A = ui->checkBox_channelA->isChecked();
+	if((psetting.channel_A == false)&&(psetting.channel_B == false))
+		ui->checkBox_channelB->setChecked(true);
+}
+
+void paraDialog::set_channelB()
+{
+	psetting.channel_B = ui->checkBox_channelB->isChecked();
+	if((psetting.channel_B == false)&&(psetting.channel_A == false))
+		ui->checkBox_channelA->setChecked(true);
 }
 
 void paraDialog::set_plsAccNum()													//脉冲数影响单文件量、总数据量（双通道乘2）//psetting获取编辑框值
@@ -286,19 +306,20 @@ void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
 
 void paraDialog::on_pushButton_sure_clicked()										//确定键
 {
-	if(dlg_setfile.isSettingsChanged(psetting))										//文件未保存时
-	{
-		QMessageBox::StandardButton reply = QMessageBox::warning(this,QString::fromLocal8Bit("提示"),
-																 QString::fromLocal8Bit("修改的参数未保存，是否要保存修改"),
-																 QMessageBox::Save|QMessageBox::Discard|QMessageBox::Cancel);
-		if(reply == QMessageBox::Save)												//点击是，弹出保存窗口
-			on_pushButton_save_clicked();
-		else
-			if(reply == QMessageBox::Discard)										//点击否时，不保存并accept()
-				accept();
-	}
-	else																			//文件若已保存，则accept()
-		accept();
+//	if(dlg_setfile.isSettingsChanged(psetting))										//文件未保存时
+//	{
+//		QMessageBox::StandardButton reply = QMessageBox::warning(this,QString::fromLocal8Bit("提示"),
+//																 QString::fromLocal8Bit("修改的参数未保存，是否要保存修改"),
+//																 QMessageBox::Save|QMessageBox::Discard|QMessageBox::Cancel);
+//		if(reply == QMessageBox::Save)												//点击是，弹出保存窗口
+//			on_pushButton_save_clicked();
+//		else
+//			if(reply == QMessageBox::Discard)										//点击否时，不保存并accept()
+//				accept();
+//	}
+//	else																			//文件若已保存，则accept()
+//		accept();
+	accept();
 }
 
 void paraDialog::on_pushButton_cancel_clicked()										//取消键
@@ -367,6 +388,8 @@ void paraDialog::update_show()
 
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
+	ui->checkBox_channelA->setChecked(psetting.channel_A);
+	ui->checkBox_channelB->setChecked(psetting.channel_B);
 	ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
 
 	if(!nocollecting)																		//若程序未采集，确定键能够使用
@@ -400,6 +423,8 @@ void paraDialog::update_show()
 	{
 		ui->lineEdit_triggerLevel->setEnabled(true);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(false);
+		ui->checkBox_channelA->setEnabled(false);
+		ui->checkBox_channelB->setEnabled(false);
 		updates_filename();
 		single_filesize();
 	}
@@ -407,6 +432,8 @@ void paraDialog::update_show()
 	{
 		ui->lineEdit_triggerLevel->setEnabled(false);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(true);
+		ui->checkBox_channelA->setEnabled(true);
+		ui->checkBox_channelB->setEnabled(true);
 		updated_filename();
 		double_filesize();
 	}

@@ -102,6 +102,8 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
 	if(col_num != 1)
 		ui->groupBox_motor->setEnabled(false);
+	else
+		ui->groupBox_motor->setEnabled(true);
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
 }
 

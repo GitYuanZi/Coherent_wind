@@ -44,7 +44,6 @@
      <string>文件</string>
     </property>
     <addaction name="action_open"/>
-    <addaction name="action_saveAs"/>
     <addaction name="separator"/>
     <addaction name="action_view"/>
    </widget>
@@ -104,9 +103,9 @@
    <addaction name="action_searchDevice"/>
    <addaction name="separator"/>
    <addaction name="action_open"/>
-   <addaction name="action_saveAs"/>
    <addaction name="separator"/>
    <addaction name="action_set"/>
+   <addaction name="action_serialport"/>
    <addaction name="separator"/>
    <addaction name="action_start"/>
    <addaction name="action_stop"/>
