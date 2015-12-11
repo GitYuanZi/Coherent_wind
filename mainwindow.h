@@ -50,7 +50,7 @@ private slots:
 	void collect_over();							//采集结束用于关闭multi-record
 
 	void receive_response(const QString &s);		//串口线程发送命令后的返回值
-	void receive_portopen();						//串口未成功打开时
+	void S_Port_ERROR();						//串口未成功打开时
 	void receive_timeout();							//接收串口命令超时
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void receive_portdlg(const QString &re);
@@ -100,7 +100,7 @@ private:
     threadStore threadD;
 	bool check_threadStore();	//检查存储线程状态
 	int num_running;			//正在运行的线程数
-	void set_statusbar();		//设置状态栏
+	void Create_statusbar();	//设置状态栏
 	QStatusBar *bar;
 	QLabel *storenum;			//声明标签对象，用于显示状态信息
 
@@ -125,7 +125,7 @@ private:
     unsigned int n_sample_skip;
 
 	void conncetdevice(void);			//连接USB采集卡设备
-	void path_create();					//数据存储文件夹的创建
+	void Create_DataFolder();			//数据存储文件夹的创建
 };
 
 #endif // MAINWINDOW_H

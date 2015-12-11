@@ -122,18 +122,18 @@ void threadStore::fileDataPara(const ACQSETTING &setting)
 	tsetting = setting;
 }
 
-void threadStore::s_memcpy(qint16 *a)
+void threadStore::s_memcpy(qint16 *d_cha)
 {
 	data_a = new qint16[tsetting.sampleNum*tsetting.plsAccNum];
-	memcpy(data_a,a,tsetting.sampleNum*tsetting.plsAccNum*2);
+	memcpy(data_a,d_cha,tsetting.sampleNum*tsetting.plsAccNum*2);
 }
 
-void threadStore::d_memcpy(qint16 *a, qint16 *b)
+void threadStore::d_memcpy(qint16 *d_cha, qint16 *d_chb)
 {
 	data_a = new qint16[tsetting.sampleNum*tsetting.plsAccNum];
 	data_b = new qint16[tsetting.sampleNum*tsetting.plsAccNum];
-	memcpy(data_a,a,tsetting.sampleNum*tsetting.plsAccNum*2);
-	memcpy(data_b,b,tsetting.sampleNum*tsetting.plsAccNum*2);
+	memcpy(data_a,d_cha,tsetting.sampleNum*tsetting.plsAccNum*2);
+	memcpy(data_b,d_chb,tsetting.sampleNum*tsetting.plsAccNum*2);
 }
 
 void threadStore::otherpara(QString a, uint b)

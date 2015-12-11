@@ -1,4 +1,4 @@
-#ifndef SERIALPORTTHREAD_H
+﻿#ifndef SERIALPORTTHREAD_H
 #define SERIALPORTTHREAD_H
 
 #include <QThread>
@@ -17,7 +17,7 @@ public:
 	void run();
 
 signals:
-	void portOpen();
+	void S_PortNotOpen();
 	void response(const QString &s);
 	void timeout();
 

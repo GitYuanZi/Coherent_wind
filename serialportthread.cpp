@@ -1,4 +1,4 @@
-#include "serialportthread.h"
+﻿#include "serialportthread.h"
 #include <QtSerialPort/QSerialPort>
 #include <QDebug>
 
@@ -55,7 +55,7 @@ void SerialPortThread::run()
 			if(!serial.open(QIODevice::ReadWrite))
 			{
 				qDebug() << "Can't open "<< currentPortName;
-				emit this->portOpen();							//串口未成功打开，信号返回到主程序
+				emit this->S_PortNotOpen();						//串口未成功打开，信号返回到主程序
 				return;
 			}
 			serial.setBaudRate(QSerialPort::Baud19200);			//波特率

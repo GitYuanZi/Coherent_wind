@@ -37,18 +37,19 @@ MainWindow::MainWindow(QWidget *parent) :
 	conncetdevice();													//连接采集卡设备
 	//	search_port();													//串口搜索
 	portname = "COM3";
-	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));//用于接收线程的emit
-	connect(&thread_collect, SIGNAL(portOpen()),this,SLOT(receive_portopen()));//连接串口未打开时对应的槽函数
-	connect(&thread_collect, SIGNAL(timeout()),this,SLOT(receive_timeout()));//接收串口命令超时
+	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));	//用于接收线程的emit
+	connect(&thread_collect, SIGNAL(S_PortNotOpen()),this,SLOT(S_Port_ERROR()));	//连接串口未打开时对应的槽函数
+	connect(&thread_collect, SIGNAL(timeout()),this,SLOT(receive_timeout()));	//接收串口命令超时
 
 	PortDialog = new portDialog(this);
 	connect(PortDialog, SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
 
-	timer1 = new QTimer(this);											//触发各个方向上开始采集
-	timer2 = new QTimer(this);											//用于判断do—while
+	timer1 = new QTimer(this);											//定时检测电机位置，和采集是否完成，然后开始下一方向采集
+	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
+
+	timer2 = new QTimer(this);											//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
 	timer2->setSingleShot(true);
 	connect(timer2,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
-	connect(timer1,SIGNAL(timeout()),this,SLOT(collect_cond()));		//定时器连接位置判断函数
 	connect_Motor = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
 
@@ -56,8 +57,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(&threadB, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
 	connect(&threadC, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
 	connect(&threadD, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
-	num_running = 0;													//运行线程数为0
-	set_statusbar();													//状态栏
+	num_running = 0;													//运行的数据存储线程数为0
+	Create_statusbar();													//状态栏
 }
 
 MainWindow::~MainWindow()
@@ -75,7 +76,7 @@ void MainWindow::creatleftdock(void)
 	addDockWidget(Qt::LeftDockWidgetArea, dockWidget);
 
 	dockleft_dlg->set_currentAngle(mysetting.start_azAngle);
-	dockleft_dlg->set_groupNume(mysetting.angleNum);
+	dockleft_dlg->set_groupNum(mysetting.angleNum);
 	dockleft_dlg->set_groupcnt(0);
 
 	QDateTime filepredate = QDateTime::currentDateTime();
@@ -190,7 +191,7 @@ void MainWindow::on_action_open_triggered()
 	}
 	else													//路径存在时，打开对应的指定路径
 	{
-		path_create();
+		Create_DataFolder();
 		QDesktopServices::openUrl(QUrl::fromLocalFile(mysetting.DatafilePath));
 	}
 }
@@ -219,7 +220,7 @@ void MainWindow::on_action_set_triggered()
 		mysetting =	ParaSetDlg->get_setting();						//mysetting获取修改后的参数
 
 		dockleft_dlg->set_currentAngle(mysetting.start_azAngle);	//更新左侧栏
-		dockleft_dlg->set_groupNume(mysetting.angleNum);
+		dockleft_dlg->set_groupNum(mysetting.angleNum);
 		dockleft_dlg->set_groupcnt(0);
 		if(mysetting.singleCh)
 		{
@@ -267,7 +268,7 @@ void MainWindow::on_action_serialport_triggered()
 }
 
 //数据存储文件夹的创建
-void MainWindow::path_create()
+void MainWindow::Create_DataFolder()
 {
 	QString currentpath = mysetting.DatafilePath;
 	QDir mypath;
@@ -294,7 +295,7 @@ void MainWindow::on_action_start_triggered()
 		return;
 	}
 	stopped = false;								//stopped为false。能够采集
-	path_create();									//创建数据存储文件夹
+	Create_DataFolder();							//创建数据存储文件夹
 	numbercollect = 0;
 
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
@@ -316,13 +317,12 @@ void MainWindow::on_action_start_triggered()
 		if(mysetting.singleCh)						//单通道采集
 		{
 			singleset();
-			timer1->start(500);
 		}
 		else										//双通道采集
 		{
 			doubleset();
-			timer1->start(500);
 		}
+		timer1->start(500);
 	}
 	else											//不连接电机
 	{
@@ -398,7 +398,7 @@ void MainWindow::receive_response(const QString &s)
 				}
 }
 
-void MainWindow::receive_portopen()					//串口未正确打开
+void MainWindow::S_Port_ERROR()						//串口未正确打开
 {
 	timer1->stop();									//关闭定时器time1,并提示未能正确打开串口
 	stopped = true;									//采集停止
@@ -514,7 +514,7 @@ void MainWindow::singlecollect()
 	timer2->start(4000);
 	do
 	{
-		trigged = ADQ212_GetTriggedAll(adq_cu,1);						//Trigger unit
+		trigged = ADQ212_GetTriggedAll(adq_cu,1);					//Trigger unit
 		if(timer2->remainingTime() == 0)
 			return;
 	}while(trigged == 0);
@@ -525,7 +525,7 @@ void MainWindow::singlecollect()
 	qDebug() << "Collecting data,plesase wait...";
 
 	if(connect_Motor)
-		thread_collect.transaction(portname,request_send);				//采集卡触发完成，驱动器开始转动
+		thread_collect.transaction(portname,request_send);			//采集卡触发完成，驱动器开始转动
 
 	qint16 *rd_data1 = new qint16[samples_per_record*number_of_records];
 	for(unsigned int i = 0; i < number_of_records; i++)				//写入采集数据
@@ -659,7 +659,7 @@ void MainWindow::doubleset()
 		return;
 	}
 
-	qDebug() << "trig_mode = " << trig_mode;						//触发模式
+	qDebug() << "trig_mode = " << trig_mode;		//触发模式
 	qDebug() << "clock_source = " << clock_source;
 	if(ADQ212_SetClockSource(adq_cu,1,clock_source) == 0)
 	{
@@ -693,9 +693,9 @@ void MainWindow::doublecollect()
 {
 	onecollect_over = false;
 	if(direction_angle > 360)
-		direction_angle = direction_angle%360;
+		direction_angle = direction_angle % 360;
 	dockleft_dlg->set_currentAngle(direction_angle);
-	dockleft_dlg->set_groupcnt(numbercollect+1);
+	dockleft_dlg->set_groupcnt(numbercollect + 1);
 	dockleft_dlg->set_filename1(FileName_A);
 	dockleft_dlg->set_filename2(FileName_B);
 
@@ -739,7 +739,7 @@ void MainWindow::doublecollect()
 	qint16 *rd_datab = new qint16[samples_per_record*number_of_records];
 	for(unsigned int i = 0; i < number_of_records; i++)
 	{
-		int rna = 0;
+		int rna = 0;	//采样点数计数值，每次读1个page，计数值一直增加
 		int rnb = 0;
 		unsigned int samples_to_collect = samples_per_record;
 		while(samples_to_collect > 0)
@@ -762,7 +762,7 @@ void MainWindow::doublecollect()
 			{
 				qDebug() << "Collect next data page failed!";
 				samples_to_collect = 0;
-				i = number_of_records;
+				i = number_of_records;		//为了跳出for循环
 			}
 		}
 	}
@@ -770,9 +770,9 @@ void MainWindow::doublecollect()
 	if(!threadA.isRunning())
 	{
 		num_running++;
-		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
+		storenum->setText(QString::fromLocal8Bit("正在运行的线程数为") + QString::number(num_running));
 		threadA.fileDataPara(mysetting);					//mysetting值传递给threadstore
-		threadA.otherpara(timestr,direction_angle);	//组数，时间，方位角传递给threadstore
+		threadA.otherpara(timestr,direction_angle);			//组数，时间，方位角传递给threadstore
 		threadA.d_memcpy(rd_dataa,rd_datab);				//采样数据传递给threadstore
 		threadA.start();									//启动threadstore线程
 	}
@@ -806,18 +806,19 @@ void MainWindow::doublecollect()
 					threadD.d_memcpy(rd_dataa,rd_datab);
 					threadD.start();
 				}
-				else															//四个线程都在运行时，停止采集
+				else	//四个线程都在运行时，停止采集
 				{
 					collect_over();
 					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
 					onecollect_over = true;
 				}
 
-	plotWindow_1->datashow(rd_dataa,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示a最后一组脉冲
+	plotWindow_1->datashow(rd_dataa,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示cha最后一组脉冲
 	delete[] rd_dataa;
-	plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示b最后一组脉冲
+	plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示chb最后一组脉冲
 	delete[] rd_datab;
 
+	// 更新文件名，先获取，再++
 	int filenumber = mysetting.dataFileName_Suffix.toInt();
 	int len = mysetting.dataFileName_Suffix.length();
 	filenumber++ ;
@@ -858,10 +859,10 @@ void MainWindow::conncetdevice()
 		qDebug() << BSN;
 		qDebug() << Revision[0];
 		qDebug() << Revision[1];
-		qDebug() << Revision[2];									//0-2是FPGA#2(comm)的信息，3-5是FPGA#1(alg)的信息
-		qDebug() << Revision[3];									//revision数
-		qDebug() << Revision[4];									//0表示SVN Managed，1表示Local Copy
-		qDebug() << Revision[5];									//0表示SVN Updated，1表示Mixed Revision
+		qDebug() << Revision[2];	//0-2是FPGA#2(comm)的信息，3-5是FPGA#1(alg)的信息
+		qDebug() << Revision[3];	//revision数
+		qDebug() << Revision[4];	//0表示SVN Managed，1表示Local Copy
+		qDebug() << Revision[5];	//0表示SVN Updated，1表示Mixed Revision
 		QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集卡设备连接成功"));
 	}
 }
@@ -897,7 +898,7 @@ void MainWindow::search_port()
 				if(response.left(10) == "VR;Whistle")
 				{
 					portname = info.portName();
-					break;											//确定连接串口后，跳出foreach循环
+					break;		//确定连接串口后，跳出foreach循环
 				}
 			}
 		}
@@ -932,7 +933,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 //设置状态栏
-void MainWindow::set_statusbar()
+void MainWindow::Create_statusbar()
 {
 	bar = ui->statusBar;											//获取状态栏
 	storenum = new QLabel;											//新建标签
@@ -947,5 +948,4 @@ void MainWindow::receive_storefinish()
 {
 	num_running--;
 	storenum->setText(QString::fromLocal8Bit("正在运行的线程数为")+QString::number(num_running));
-
 }

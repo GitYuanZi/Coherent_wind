@@ -35,18 +35,18 @@ void informationleft::set_currentAngle(quint16 a)		//当前角度、圆盘示意
 
 }
 
-void informationleft::set_groupNume(quint32 a)			//总组数
+void informationleft::set_groupNum(quint32 a)			//总组数
 {
-	groupNume = a;
+	groupNum = a;
 }
 
 void informationleft::set_groupcnt(quint16 a)			//采集组数/总组数 以及进度条
 {
 	QString str;
 	groupcnt = a;
-	str = QString::number(a) + "/" +QString::number(groupNume);
+	str = QString::number(a) + "/" +QString::number(groupNum);
 	ui->label_groupcnt->setText(str);
-	ui->progressBar_grouppercent->setValue(groupcnt*100/groupNume);
+	ui->progressBar_grouppercent->setValue(groupcnt*100/groupNum);
 }
 
 void informationleft::set_filename1(QString str)
