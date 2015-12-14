@@ -80,6 +80,8 @@ void portDialog::search_port()								//搜索串口函数
 
 void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
 {
+	QString position = "PX;";
+	emit this->portdlg_send(position);
 	portTested = a;
 	retSP = b;
 	MotorConnect = c;

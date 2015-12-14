@@ -128,6 +128,8 @@ private:
 
 	void conncetdevice(void);			//连接USB采集卡设备
 	void Create_DataFolder();			//数据存储文件夹的创建
+
+	int n_of_ADQ212;					//ADQ212数量
 };
 
 #endif // MAINWINDOW_H
