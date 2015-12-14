@@ -68,8 +68,13 @@ void portDialog::search_port()								//搜索串口函数
 	}
 	my_serial.close();
 	if((portTested == NULL)||(portTested.left(3) != "COM"))
+	{
+		QString fail = "fai";
+		emit this->portdlg_send(fail);
 		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
-	emit this->portdlg_send(portTested);
+	}
+	else
+		emit this->portdlg_send(portTested);
 	ui->pushButton_auto_searchPort->setEnabled(true);
 }
 

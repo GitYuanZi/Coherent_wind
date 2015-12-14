@@ -102,7 +102,10 @@ private:
 	int num_running;			//正在运行的线程数
 	void Create_statusbar();	//设置状态栏
 	QStatusBar *bar;
-	QLabel *storenum;			//声明标签对象，用于显示状态信息
+	QLabel *ADQ_state;			//声明标签对象，用于显示采集卡连接状态
+	QLabel *motor_state;		//用于显示电机连接状态
+	QLabel *collect_state;		//用于显示采集状态
+	QLabel *storenum;			//用于显示存储线程状态
 
 	QString FileName_1;			//完整文件名
 	QString FileName_A;
