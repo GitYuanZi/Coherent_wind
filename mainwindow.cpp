@@ -39,8 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	//	search_port();													//串口搜索
 	portname = "COM3";
 	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));	//用于接收线程的emit
-	connect(&thread_collect, SIGNAL(S_PortNotOpen()),this,SLOT(S_Port_ERROR()));	//连接串口未打开时对应的槽函数
-	connect(&thread_collect, SIGNAL(timeout()),this,SLOT(receive_timeout()));	//接收串口命令超时
+	connect(&thread_collect, SIGNAL(S_PortNotOpen()),this,SLOT(portError_OR_timeout()));	//连接串口未打开时对应的槽函数
+	connect(&thread_collect, SIGNAL(timeout()),this,SLOT(portError_OR_timeout()));	//接收串口命令超时
 
 	PortDialog = new portDialog(this);
 	connect(PortDialog, SIGNAL(portdlg_send(QString)),this,SLOT(receive_portdlg(QString)));
@@ -405,22 +405,13 @@ void MainWindow::receive_response(const QString &s)
 				}
 }
 
-void MainWindow::S_Port_ERROR()						//串口未正确打开
+void MainWindow::portError_OR_timeout()						//串口未正确打开或接收串口命令超时
 {
-	timer1->stop();									//关闭定时器time1,并提示未能正确打开串口
-	stopped = true;									//采集停止
+	timer1->stop();											//关闭定时器time1,并提示未能正确打开串口
+	stopped = true;											//采集停止
 	motor_state->setText(QString::fromLocal8Bit("电机未能正确连接"));
 	collect_state->setText(QString::fromLocal8Bit("采集停止"));
-	QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口未能正确连接"));
-}
-
-void MainWindow::receive_timeout()					//接收串口命令超时
-{
-	timer1->stop();
-	stopped = true;
-	motor_state->setText(QString::fromLocal8Bit("电机未能正确连接"));
-	collect_state->setText(QString::fromLocal8Bit("采集停止"));
-	QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("Receive timeout"));
+	QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口未能正确连接或接收命令超时"));
 }
 
 void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的信息

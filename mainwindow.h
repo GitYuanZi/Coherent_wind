@@ -50,8 +50,7 @@ private slots:
 	void collect_over();							//采集结束用于关闭multi-record
 
 	void receive_response(const QString &s);		//串口线程发送命令后的返回值
-	void S_Port_ERROR();						//串口未成功打开时
-	void receive_timeout();							//接收串口命令超时
+	void portError_OR_timeout();					//串口未成功打开时或接收串口命令超时
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void receive_portdlg(const QString &re);
 

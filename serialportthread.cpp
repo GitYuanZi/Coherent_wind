@@ -80,7 +80,7 @@ void SerialPortThread::run()
 			}
 			else
 			{
-//				emit this->timeout();
+				emit this->timeout();
 				return;
 			}
 		}
@@ -89,6 +89,7 @@ void SerialPortThread::run()
 			emit this->timeout();
 			return;
 		}
+
 		mutex.lock();
 		cond.wait(&mutex);
 		if(currentPortName != portName)
