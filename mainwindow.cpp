@@ -299,7 +299,7 @@ void MainWindow::on_action_start_triggered()
 	failedNum = ADQControlUnit_GetFailedDeviceCount(adq_cu);
 	if((failedNum > 0)||(devicesNum == 0)||(ADQ212Num == 0))
 	{
-		ADQ_state->setText(QString::fromLocal8Bit("采集卡连接失败"));
+		ADQ_state->setText(QString::fromLocal8Bit("采集卡未连接"));
 		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备连接失败"));
 		return;
 	}
@@ -327,7 +327,7 @@ void MainWindow::on_action_start_triggered()
 	if(connect_Motor)								//连接电机
 	{
 		search_port();								//检测串口是否连接
-		if((portname.left(3) != "COM")||(portname == NULL))
+		if(portname.left(3) != "COM")
 		{
 			motor_state->setText(QString::fromLocal8Bit("电机未连接"));
 			QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
@@ -442,9 +442,12 @@ void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的�
 	}
 	else
 		if(re_need.left(3) == "fai")
+		{
 			motor_state->setText(QString::fromLocal8Bit("电机未连接"));
+			QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
+		}
 		else
-			if((re_need.left(3) == "SP;")||(re_need.left(3) == "MO;")||(re_need.left(3) == "PX;"))
+			if((re_need.left(3) == "SP;")||(re_need.left(3) == "MO;"))
 				thread_collect.transaction(portname,re_need);
 }
 
@@ -953,7 +956,7 @@ void MainWindow::search_port()
 
 void MainWindow::search_failed_Show()
 {
-	if((portname.left(3) != "COM")||(portname == NULL))
+	if(portname.left(3) != "COM")
 	{
 		motor_state->setText(QString::fromLocal8Bit("电机未连接"));
 		QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));

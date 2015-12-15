@@ -34,6 +34,7 @@ bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主
 void portDialog::search_port()								//搜索串口函数
 {
 	ui->pushButton_auto_searchPort->setEnabled(false);
+	portTested.clear();
 	QSerialPort my_serial;
 	foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
 	{
@@ -67,11 +68,10 @@ void portDialog::search_port()								//搜索串口函数
 		}
 	}
 	my_serial.close();
-	if((portTested == NULL)||(portTested.left(3) != "COM"))
+	if(portTested.left(3) != "COM")
 	{
 		QString fail = "fai";
 		emit this->portdlg_send(fail);
-		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
 	}
 	else
 		emit this->portdlg_send(portTested);
@@ -80,8 +80,6 @@ void portDialog::search_port()								//搜索串口函数
 
 void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
 {
-	QString position = "PX;";
-	emit this->portdlg_send(position);
 	portTested = a;
 	retSP = b;
 	MotorConnect = c;
@@ -112,6 +110,8 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 	else
 		ui->groupBox_motor->setEnabled(true);
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
+	QString position = "MO;PX;";
+	emit this->portdlg_send(position);
 }
 
 void portDialog::set_SP()

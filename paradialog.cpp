@@ -148,6 +148,7 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 	ui->checkBox_channelB->setEnabled(false);
 	updates_filename();
 	single_filesize();
+	ui->label_triggerHoldOffTime->setText(NULL);
 }
 
 void paraDialog::set_doubleCh()														//双通道 影响触发电平，以及chA、B文件名编辑框数据量
@@ -160,6 +161,8 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 	ui->checkBox_channelB->setEnabled(true);
 	updated_filename();
 	double_filesize();
+	ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
+										  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
 }
 
 void paraDialog::set_sampleFreq()													//采样频率 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -169,6 +172,9 @@ void paraDialog::set_sampleFreq()													//采样频率 影响采样点数�
 	direct_size = 48+psetting.plsAccNum*psetting.sampleNum*2;						//单个方向上的数据量
 
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
+	if(psetting.doubleCh)
+		ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
+											  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
 }
 
 void paraDialog::set_detRange()														//探测距离 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -263,7 +269,11 @@ void paraDialog::set_triggerHoldOffSamples()										//psetting获取触发延�
 		ui->lineEdit_triggerHoldOffSamples->setText(NULL);
 	}
 	else
+	{
 		psetting.triggerHoldOffSamples = ui->lineEdit_triggerHoldOffSamples->text().toInt();
+		ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
+											  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
+	}
 }
 
 void paraDialog::set_motorSP()														//电机转速
@@ -436,6 +446,8 @@ void paraDialog::update_show()
 		ui->checkBox_channelB->setEnabled(true);
 		updated_filename();
 		double_filesize();
+		ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
+											  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
 	}
 }
 
