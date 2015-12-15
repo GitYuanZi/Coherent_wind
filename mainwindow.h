@@ -67,6 +67,7 @@ private:
 	QString request_send;							//发送给串口的命令
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
 	void search_port();								//串口搜索
+	void search_failed_Show();						//串口连接失败提示
 	void start_position();							//驱动器的初始角位置
 	int PX0, PX1;									//驱动器返回的PX值
 	bool connect_Motor;								//单方向采集连接电机
@@ -128,8 +129,6 @@ private:
 
 	void conncetdevice(void);			//连接USB采集卡设备
 	void Create_DataFolder();			//数据存储文件夹的创建
-
-	int n_of_ADQ212;					//ADQ212数量
 };
 
 #endif // MAINWINDOW_H

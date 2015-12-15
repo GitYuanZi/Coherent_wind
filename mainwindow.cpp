@@ -36,7 +36,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	creatqwtdock();														//曲线栏
 	Create_statusbar();													//状态栏
 	conncetdevice();													//连接采集卡设备
-	//	search_port();													//串口搜索
+//	search_port();														//串口搜索
+//	search_failed_Show();												//串口连接失败提示
 	portname = "COM3";
 	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));	//用于接收线程的emit
 	connect(&thread_collect, SIGNAL(S_PortNotOpen()),this,SLOT(portError_OR_timeout()));	//连接串口未打开时对应的槽函数
@@ -290,13 +291,19 @@ void MainWindow::refresh()
 //采集菜单中的开始按钮
 void MainWindow::on_action_start_triggered()
 {
-	if(n_of_ADQ212 == 0)							//若采集卡未连接，连接采集卡
+	adq_cu = CreateADQControlUnit();				//搜索并连接采集卡
+	int devicesNum = 0;
+	int failedNum = 0;
+	devicesNum = ADQControlUnit_FindDevices(adq_cu);
+	int ADQ212Num = ADQControlUnit_NofADQ212(adq_cu);
+	failedNum = ADQControlUnit_GetFailedDeviceCount(adq_cu);
+	if((failedNum > 0)||(devicesNum == 0)||(ADQ212Num == 0))
 	{
-		ADQ_state->setText(QString::fromLocal8Bit("采集卡连接中..."));
-		conncetdevice();
-	}
-	if(n_of_ADQ212 == 0)							//再次检查采集卡连接状态、若未连接，则停止采集
+		ADQ_state->setText(QString::fromLocal8Bit("采集卡连接失败"));
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备连接失败"));
 		return;
+	}
+
 	if((!check_threadStore())&&stopped)				//检查存储线程是否完成数据存储
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
@@ -319,11 +326,15 @@ void MainWindow::on_action_start_triggered()
 
 	if(connect_Motor)								//连接电机
 	{
-		if(portname == NULL)						//检查电机是否连接
+		search_port();								//检测串口是否连接
+		if((portname.left(3) != "COM")||(portname == NULL))
 		{
-			QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机未连接"));
+			motor_state->setText(QString::fromLocal8Bit("电机未连接"));
+			QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
+			portname.clear();						//电机未连接时，portname值设为空
 			return;
 		}
+
 		start_position();							//驱动器初始位置
 		int pr_data = mysetting.step_azAngle*800/3;
 		request_send = "PR="+QString::number(pr_data)+";BG;";//设定驱动器的PR值，命令为PR= ;BG;
@@ -867,7 +878,7 @@ void MainWindow::conncetdevice()
 	int n_of_devices = 0;
 	int n_of_failed = 0;
 	n_of_devices = ADQControlUnit_FindDevices(adq_cu);				//找到所有与电脑连接的ADQ，并创建一个指针列表，返回找到设备的总数
-	n_of_ADQ212 = ADQControlUnit_NofADQ212(adq_cu);					//返回找到ADQ212设备的数量
+	int n_of_ADQ212 = ADQControlUnit_NofADQ212(adq_cu);				//返回找到ADQ212设备的数量
 	n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);		//返回找到的单元数量
 
 	if(n_of_failed > 0)
@@ -901,6 +912,7 @@ void MainWindow::conncetdevice()
 //搜索串口，确定串口名
 void MainWindow::search_port()
 {
+	portname.clear();
 	QSerialPort my_serial;
 	foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
 	{
@@ -937,10 +949,15 @@ void MainWindow::search_port()
 	}
 	my_serial.close();
 	qDebug() << "portName = " << portname;
+}
+
+void MainWindow::search_failed_Show()
+{
 	if((portname.left(3) != "COM")||(portname == NULL))
 	{
 		motor_state->setText(QString::fromLocal8Bit("电机未连接"));
 		QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
+		portname.clear();
 	}
 }
 
