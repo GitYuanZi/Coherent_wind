@@ -189,41 +189,41 @@
     <string>chx</string>
    </property>
   </widget>
-  <widget class="QwtCompass" name="Compass">
-   <property name="enabled">
-    <bool>false</bool>
-   </property>
+  <widget class="QwtDial" name="Dial">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>60</y>
-     <width>200</width>
-     <height>200</height>
+     <x>25</x>
+     <y>50</y>
+     <width>211</width>
+     <height>211</height>
     </rect>
    </property>
    <property name="font">
     <font>
      <family>微软雅黑</family>
-     <pointsize>11</pointsize>
+     <pointsize>8</pointsize>
     </font>
    </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
-   <property name="styleSheet">
-    <string notr="true">color: rgb(122, 156, 200);</string>
-   </property>
-   <property name="value">
+   <property name="lowerBound">
     <double>0.000000000000000</double>
    </property>
+   <property name="upperBound">
+    <double>360.000000000000000</double>
+   </property>
+   <property name="scaleMaxMajor">
+    <number>12</number>
+   </property>
+   <property name="scaleMaxMinor">
+    <number>3</number>
+   </property>
+   <property name="scaleStepSize">
+    <double>30.000000000000000</double>
+   </property>
    <property name="lineWidth">
-    <number>4</number>
+    <number>0</number>
    </property>
    <property name="frameShadow">
     <enum>QwtDial::Plain</enum>
-   </property>
-   <property name="mode">
-    <enum>QwtDial::RotateNeedle</enum>
    </property>
    <property name="origin">
     <double>270.000000000000000</double>
@@ -231,11 +231,6 @@
   </widget>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QwtCompass</class>
-   <extends>QwtDial</extends>
-   <header>qwt_compass.h</header>
-  </customwidget>
   <customwidget>
    <class>QwtDial</class>
    <extends>QWidget</extends>

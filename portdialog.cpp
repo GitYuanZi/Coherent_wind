@@ -67,15 +67,21 @@ void portDialog::search_port()								//搜索串口函数
 			}
 		}
 	}
+	qDebug() << "aaa";
 	my_serial.close();
+	ui->pushButton_auto_searchPort->setEnabled(true);
 	if(portTested.left(3) != "COM")
 	{
 		QString fail = "fai";
 		emit this->portdlg_send(fail);
+		qDebug() << "bbb";
 	}
 	else
+	{
 		emit this->portdlg_send(portTested);
-	ui->pushButton_auto_searchPort->setEnabled(true);
+		qDebug() << "bbb";
+	}
+
 }
 
 void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
@@ -110,7 +116,7 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 	else
 		ui->groupBox_motor->setEnabled(true);
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
-	QString position = "MO;PX;";
+	QString position = "AC;PX;";
 	emit this->portdlg_send(position);
 }
 
@@ -155,34 +161,40 @@ void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 {
 	ui->pushButton_opposite->setEnabled(false);
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-//	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
-//	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
+	int opposite_angle = 800/3*ui->lineEdit_PR->text().toFloat();
 	if(ui->radioButton_CW->isChecked())
-		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
+	{
+		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(opposite_angle));
+		px_data = px_data - ui->lineEdit_PR->text().toInt();
+	}
 	else
-		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(int((ui->lineEdit_PR->text().toFloat())*800/3)));
-	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PR);
+	{
+		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(opposite_angle));
+		px_data = px_data + ui->lineEdit_PR->text().toInt();
+	}
+	request = QString("MO;%1AC=48000;DC=48000;%2BG;").arg(dialog_SP).arg(dialog_PR);
 	qDebug() << "request = " << request;
-//	thread_dia.transaction(portTested,request);
+	qDebug() << "px_data = " << px_data;
 	emit this->portdlg_send(request);
-	ui->pushButton_opposite->setEnabled(true);
+
+	ui->lineEdit_PX->setText(QString::number(px_data));
 }
 
 void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 {
 	ui->pushButton_absolute->setEnabled(false);
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-//	dialog_AC = QString("AC=%1;").arg(QString::number(int((ui->lineEdit_AC->text().toFloat())*800/3)));
-//	dialog_DC = QString("DC=%1;").arg(QString::number(int((ui->lineEdit_DC->text().toFloat())*800/3)));
+	int absolute_angle = 800/3*ui->lineEdit_PA->text().toFloat();
 	if(ui->radioButton_CW->isChecked())
-		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
+		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(absolute_angle));
 	else
-		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(int((ui->lineEdit_PA->text().toFloat())*800/3)));
-	request = QString("%1AC=48000;DC=48000;%2BG;PX;").arg(dialog_SP).arg(dialog_PA);
+		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(absolute_angle));
+	request = QString("MO;%1AC=48000;DC=48000;%2BG;").arg(dialog_SP).arg(dialog_PA);
 	qDebug() << "request = " << request;
-//	thread_dia.transaction(portTested,request);
 	emit this->portdlg_send(request);
-	ui->pushButton_absolute->setEnabled(true);
+
+	px_data = ui->lineEdit_PA->text().toInt();
+	ui->lineEdit_PX->setText(QString::number(px_data));
 }
 
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
@@ -190,13 +202,19 @@ void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 	ui->pushButton_setPXis0->setEnabled(false);
 	request = "MO=0;PX=0;MO=1;";
 	qDebug() << "request = " << request;
-//	thread_dia.transaction(portTested,request);
 	emit this->portdlg_send(request);
 	ui->pushButton_setPXis0->setEnabled(true);
 }
 
 void portDialog::show_PX(const QString &px_show)
 {
-	QString strPx = px_show;
-	ui->lineEdit_PX->setText(strPx);
+	px_str = px_show;
+	px_data = px_str.toInt()*3/800;
+	ui->lineEdit_PX->setText(QString::number(px_data));
+}
+
+void portDialog::button_enabled()
+{
+	ui->pushButton_absolute->setEnabled(true);
+	ui->pushButton_opposite->setEnabled(true);
 }

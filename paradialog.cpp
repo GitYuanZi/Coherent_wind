@@ -572,7 +572,7 @@ void paraDialog::updated_filename()
 
 void paraDialog::set_dect_time()												//计算探测时间
 {
-	int time_need = (float)psetting.plsAccNum*psetting.angleNum/psetting.laserRPF+(psetting.angleNum-1)*(float)(psetting.SP*800/3)/96000;
+	int time_need = (psetting.angleNum-1)*psetting.step_azAngle/psetting.SP + psetting.sampleNum/(psetting.sampleFreq*1000);
 	if(time_need < 1)
 		ui->lineEdit_totalTime->setText("<1s");									//在1s以下
 	else

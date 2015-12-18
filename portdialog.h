@@ -26,6 +26,8 @@ public:
 
 	void show_PX(const QString &px_show);	//显示当前位置
 
+	void button_enabled();
+
 signals:
 	void portdlg_send(const QString &re);	//对话框返回字符串到主程序
 
@@ -65,6 +67,8 @@ private:
 	bool MotorConnect;			//是否连接电机
 	quint32 col_num;			//采集的组数
 	bool nocoll;				//是否正在采集
+	QString px_str;
+	int px_data;
 };
 
 #endif // PORTDIALOG_H
