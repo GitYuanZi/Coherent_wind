@@ -67,7 +67,6 @@ private:
 	QString request_send;							//发送给串口的命令
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
 	void search_port();								//串口搜索
-	void search_failed_Show();						//串口连接失败提示
 	void start_position();							//驱动器的初始角位置
 	int PX0, PX1;									//驱动器返回的PX值
 	bool connect_Motor;								//单方向采集连接电机
@@ -98,7 +97,6 @@ private:
     threadStore threadB;
     threadStore threadC;
     threadStore threadD;
-	bool check_threadStore();	//检查存储线程状态
 	int num_running;			//正在运行的线程数
 	void Create_statusbar();	//设置状态栏
 	QStatusBar *bar;

@@ -149,8 +149,8 @@ void settingFile::test_create_file(const QString &c,const QString &d)
 		path_c.append("/").append(prefix_str);				//路径末尾加上日期文件夹
 		settings.setValue("DatafilePath",path_c);			//文件保存路径
 		settings.setValue("autocreate_datafile",true);		//自动创建日期文件夹
-		settings.setValue("channel_A",false);				//通道A
-		settings.setValue("channel_B",false);				//通道B
+		settings.setValue("channel_A",true);				//通道A
+		settings.setValue("channel_B",true);				//通道B
 		settings.setValue("dataFileNamePrefix",prefix_str);	//前缀文件名
 		settings.setValue("dataFileNameSuffix","001");		//后缀文件名
 		settings.endGroup();

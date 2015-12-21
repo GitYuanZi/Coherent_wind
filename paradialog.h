@@ -21,8 +21,8 @@ public:
     ACQSETTING get_setting(void);
     void update_show();
 															//参考信息显示
-    void updates_filename();
-    void updated_filename();
+	void update_s_filename();
+	void update_d_filename();
 	void show_detect_mode();								//探测方式
 
 	void initial_para();

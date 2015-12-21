@@ -144,11 +144,14 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 	psetting.doubleCh = false;
 	ui->lineEdit_triggerLevel->setEnabled(true);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(false);							//触发延迟
+	ui->checkBox_channelA->setChecked(false);
+	ui->checkBox_channelB->setChecked(false);
 	ui->checkBox_channelA->setEnabled(false);
 	ui->checkBox_channelB->setEnabled(false);
-	updates_filename();
+	update_s_filename();
 	single_filesize();
-	ui->label_triggerHoldOffTime->setText(NULL);
+	ui->label_triggerHoldOffTime->setText(NULL);	
+	on_pushButton_dataFileName_sch_clicked();										//自动搜索单通文件的最小序号
 }
 
 void paraDialog::set_doubleCh()														//双通道 影响触发电平，以及chA、B文件名编辑框数据量
@@ -157,12 +160,15 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 	psetting.doubleCh = true;
 	ui->lineEdit_triggerLevel->setEnabled(false);
 	ui->lineEdit_triggerHoldOffSamples->setEnabled(true);							//触发延迟
+	ui->checkBox_channelA->setChecked(psetting.channel_A);
+	ui->checkBox_channelB->setChecked(psetting.channel_B);
 	ui->checkBox_channelA->setEnabled(true);
 	ui->checkBox_channelB->setEnabled(true);
-	updated_filename();
+	update_d_filename();
 	double_filesize();
 	ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
 										  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
+	on_pushButton_dataFileName_sch_clicked();										//自动搜索双通道文件的最小序号
 }
 
 void paraDialog::set_sampleFreq()													//采样频率 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -219,9 +225,9 @@ void paraDialog::set_dataFileName_Suffix()											//文件的后缀名
 {
 	psetting.dataFileName_Suffix = ui->lineEdit_dataFileName_Suffix->text();
 	if(ui->radioButton_singleCh->isChecked())
-		updates_filename();
+		update_s_filename();
 	else
-		updated_filename();
+		update_d_filename();
 }
 
 void paraDialog::set_laserRPF()														//psetting获取编辑框值
@@ -289,7 +295,7 @@ void paraDialog::set_motorSP()														//电机转速
 
 void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
 {
-	QFileDialog *fd=new QFileDialog(this,"Data File Path Choose",psetting.DatafilePath);
+	QFileDialog *fd=new QFileDialog(this,"DataFile Path Choose",psetting.DatafilePath);
 	fd->setFileMode(QFileDialog::Directory);
 	fd->setOption(QFileDialog::ShowDirsOnly, true);
 	if(fd->exec() == QFileDialog::Accepted)
@@ -398,11 +404,9 @@ void paraDialog::update_show()
 
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
-	ui->checkBox_channelA->setChecked(psetting.channel_A);
-	ui->checkBox_channelB->setChecked(psetting.channel_B);
 	ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
 
-	if(!nocollecting)																		//若程序未采集，确定键能够使用
+	if(nocollecting == false)																		//若程序采集，确定键为非使能状态
 		ui->pushButton_sure->setEnabled(false);
 																							//下方参考信息
 	show_detect_mode();																		//探测方式
@@ -433,18 +437,22 @@ void paraDialog::update_show()
 	{
 		ui->lineEdit_triggerLevel->setEnabled(true);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(false);
+		ui->checkBox_channelA->setChecked(false);
+		ui->checkBox_channelB->setChecked(false);
 		ui->checkBox_channelA->setEnabled(false);
 		ui->checkBox_channelB->setEnabled(false);
-		updates_filename();
+		update_s_filename();
 		single_filesize();
 	}
 	else
 	{
 		ui->lineEdit_triggerLevel->setEnabled(false);
 		ui->lineEdit_triggerHoldOffSamples->setEnabled(true);
+		ui->checkBox_channelA->setChecked(psetting.channel_A);
+		ui->checkBox_channelB->setChecked(psetting.channel_B);
 		ui->checkBox_channelA->setEnabled(true);
 		ui->checkBox_channelB->setEnabled(true);
-		updated_filename();
+		update_d_filename();
 		double_filesize();
 		ui->label_triggerHoldOffTime->setText(QString::fromLocal8Bit("触发延迟时间")+
 											  QString::number((double)(1000*psetting.triggerHoldOffSamples/psetting.sampleFreq),'f',2)+"ns");
@@ -502,9 +510,13 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()
 	Set_DatafilePath(str);
 }
 
-void paraDialog::on_pushButton_dataFileName_sch_clicked()								//自动查找最小序号
+void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找最小序号
 {
-	QString filter_str = psetting.dataFileName_Prefix + "_ch[1AB]_";					//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
+	QString filter_str;
+	if(psetting.singleCh)															//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
+		filter_str = psetting.dataFileName_Prefix + "_ch[1]_";
+	else
+		filter_str = psetting.dataFileName_Prefix + "_ch[AB]_";
 	int suffix_l = psetting.dataFileName_Suffix.length();
 	for(int i=0;i<suffix_l;i++)
 		filter_str += "[0123456789]";
@@ -515,15 +527,15 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()								//自动查找�
 	QStringList FN_list;
 	QStringList filter(filter_str);
 
-	QDir *dir = new QDir(psetting.DatafilePath);										// 获取路径下的文件列表
+	QDir *dir = new QDir(psetting.DatafilePath);									// 获取路径下的文件列表
 	dir->setNameFilters(filter);
 
-	QList<QFileInfo> *fileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));		// 设置文件名过滤器
+	QList<QFileInfo> *fileInfo = new QList<QFileInfo>(dir->entryInfoList(filter));	// 设置文件名过滤器
 
 	int file_numbers = fileInfo->count();
 	int max_num = 0;
 	int tmp_num = 0;
-	for(int i=0;i<file_numbers;i++)														//搜索当前最大序号
+	for(int i=0;i<file_numbers;i++)													//搜索当前最大序号
 	{
 		FN_list<<fileInfo->at(i).baseName().right(suffix_l);
 		tmp_num = fileInfo->at(i).baseName().right(suffix_l).toInt();
@@ -556,14 +568,14 @@ void paraDialog::show_detect_mode()
 			ui->lineEdit_detectDir->setText(QString::fromLocal8Bit("圆锥扫描探测，每周方向数")+QString::number(360/psetting.step_azAngle));
 }
 
-void paraDialog::updates_filename()
+void paraDialog::update_s_filename()
 {
 	ui->lineEdit_dataFileName_ch1->setText(psetting.dataFileName_Prefix + "_ch1_" + psetting.dataFileName_Suffix + ".wld");
 	ui->lineEdit_dataFileName_chA->setText(NULL);
 	ui->lineEdit_dataFileName_chB->setText(NULL);
 }
 
-void paraDialog::updated_filename()
+void paraDialog::update_d_filename()
 {
 	ui->lineEdit_dataFileName_ch1->setText(NULL);
 	ui->lineEdit_dataFileName_chA->setText(psetting.dataFileName_Prefix + "_chA_" + psetting.dataFileName_Suffix + ".wld");

@@ -67,21 +67,14 @@ void portDialog::search_port()								//搜索串口函数
 			}
 		}
 	}
-	qDebug() << "aaa";
 	my_serial.close();
-	ui->pushButton_auto_searchPort->setEnabled(true);
 	if(portTested.left(3) != "COM")
 	{
 		QString fail = "fai";
 		emit this->portdlg_send(fail);
-		qDebug() << "bbb";
 	}
 	else
-	{
 		emit this->portdlg_send(portTested);
-		qDebug() << "bbb";
-	}
-
 }
 
 void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
@@ -100,7 +93,7 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
-	if(!nocoll)												//若正在采集，界面除取消键，其他均为非使能状态
+	if(nocoll  == false)									//若正在采集，界面除取消键，其他均为非使能状态
 	{
 		ui->groupBox->setEnabled(false);
 		ui->groupBox_2->setEnabled(false);
@@ -111,10 +104,13 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 		ui->pushButton_sure->setEnabled(false);
 	}
 	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
-	if(col_num != 1)
-		ui->groupBox_motor->setEnabled(false);
-	else
+	if(col_num == 1)
+	{
 		ui->groupBox_motor->setEnabled(true);
+		ui->checkBox_motor_connected->setChecked(MotorConnect);
+	}
+	else
+		ui->groupBox_motor->setEnabled(false);
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
 	QString position = "AC;PX;";
 	emit this->portdlg_send(position);
@@ -172,7 +168,7 @@ void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(opposite_angle));
 		px_data = px_data + ui->lineEdit_PR->text().toInt();
 	}
-	request = QString("MO;%1AC=48000;DC=48000;%2BG;").arg(dialog_SP).arg(dialog_PR);
+	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PR);
 	qDebug() << "request = " << request;
 	qDebug() << "px_data = " << px_data;
 	emit this->portdlg_send(request);
@@ -189,7 +185,7 @@ void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(absolute_angle));
 	else
 		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(absolute_angle));
-	request = QString("MO;%1AC=48000;DC=48000;%2BG;").arg(dialog_SP).arg(dialog_PA);
+	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PA);
 	qDebug() << "request = " << request;
 	emit this->portdlg_send(request);
 
@@ -203,7 +199,6 @@ void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 	request = "MO=0;PX=0;MO=1;";
 	qDebug() << "request = " << request;
 	emit this->portdlg_send(request);
-	ui->pushButton_setPXis0->setEnabled(true);
 }
 
 void portDialog::show_PX(const QString &px_show)
@@ -217,4 +212,5 @@ void portDialog::button_enabled()
 {
 	ui->pushButton_absolute->setEnabled(true);
 	ui->pushButton_opposite->setEnabled(true);
+	ui->pushButton_setPXis0->setEnabled(true);
 }

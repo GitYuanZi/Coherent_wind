@@ -35,9 +35,8 @@ MainWindow::MainWindow(QWidget *parent) :
 	creatleftdock();													//左侧栏
 	creatqwtdock();														//曲线栏
 	Create_statusbar();													//状态栏
-	conncetdevice();													//连接采集卡设备
 	search_port();														//串口搜索
-	search_failed_Show();												//串口连接失败提示
+	conncetdevice();													//连接采集卡设备
 //	portname = "COM3";
 	connect(&thread_collect, SIGNAL(response(QString)),this,SLOT(receive_response(QString)));	//用于接收线程的emit
 	connect(&thread_collect, SIGNAL(S_PortNotOpen()),this,SLOT(portError_OR_timeout()));	//连接串口未打开时对应的槽函数
@@ -292,7 +291,7 @@ void MainWindow::refresh()
 void MainWindow::on_action_start_triggered()
 {
 	collect_state->setText(QString::fromLocal8Bit("检查存储线程..."));
-	if((!check_threadStore())&&stopped)				//检查存储线程是否完成数据存储
+	if((num_running != 0)||(stopped == false))		//检查存储线程是否完成数据存储
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
 		return;
@@ -303,20 +302,18 @@ void MainWindow::on_action_start_triggered()
 
 	clock_source = 0;								//时钟源选择0，内部时钟，内部参考
 	n_sample_skip = 1;								//采样间隔设为1，表示无采样间隔
-	qDebug() << "n_sample_skip = " << n_sample_skip;
 	if(ADQ212_SetSampleSkip(adq_cu,1,n_sample_skip) == 0)
 	{
 		collect_state->setText(QString::fromLocal8Bit("采集停止"));
+		stopped = true;
 		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("采集卡连接异常"));
 		return;
 	}
 
 	if(connect_Motor)								//连接电机
 	{
-		collect_state->setText(QString::fromLocal8Bit("检查电机..."));
-		QString check_order("VR;");					//检测串口是否连接
-		thread_collect.transaction(portname,check_order);
-		qDebug() << "send order";
+		collect_state->setText(QString::fromLocal8Bit("电机位置调整..."));
+		start_position();							//驱动器初始位置
 	}
 	else											//不连接电机
 	{
@@ -338,7 +335,6 @@ void MainWindow::on_action_start_triggered()
 //位置判断函数，利用定时器定时发送命令
 void MainWindow::collect_cond()
 {
-	collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 	QString judge("PX;");
 	thread_collect.transaction(portname,judge);		//发送PX;接收返回值
 	qDebug() << "judge = " << judge;
@@ -357,12 +353,13 @@ void MainWindow::receive_response(const QString &s)
 		qDebug() << "retData = " << retData;
 		PX1 = retData;
 
-		if(PX1 == PX0)										//当两个PX返回值相等，判断是否到达下一组采集位置
+		if(((PX0-2)<=PX1)&&(PX1<=(PX0+2)))					//当两个PX返回值相等，误差范围±2，判断是否到达下一组采集位置
 		{
 			direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
 			int range = direction_angle*800/3;
 			if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
 			{
+				collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 				if(mysetting.singleCh)
 					singlecollect();
 				else
@@ -372,11 +369,8 @@ void MainWindow::receive_response(const QString &s)
 		PX0 = PX1;
 	}
 	else
-		if(s.left(2) == "VR")								//串口连接，调整初始位置,开始采集
+		if(s.left(2) == "SP")								//接收初始位置命令返回值,开始采集
 		{
-			collect_state->setText(QString::fromLocal8Bit("电机位置调整..."));
-			start_position();								//驱动器初始位置
-
 			int pr_data = mysetting.step_azAngle*800/3;
 			request_send = "PR="+QString::number(pr_data)+";BG;";
 			PX0 = 96001;
@@ -385,22 +379,21 @@ void MainWindow::receive_response(const QString &s)
 				singleset();
 			else											//双通道采集
 				doubleset();
-			timer1->start(500);
-			qDebug() << "timer start";
+			timer1->start(300);
 		}
 		else
 			if(s.left(2) == "AC")							//返回电机当前位置值给串口对话框
 			{
-				QString res_ACPX = s;
-				QStringList reslist = res_ACPX.split(";");	//获取当前位置
+				QString res_ACPX = s;						//获取当前位置
+				QStringList reslist = res_ACPX.split(";");
 				QString res = reslist.at(3).toLocal8Bit().data();
 				PortDialog->show_PX(res);					//在串口对话框中显示当前位置PX
 			}
 			else
-				if(s.left(2) == "MO")
+				if((s.left(2) == "MO")||(s.left(2) == "DC"))
 					PortDialog->button_enabled();
 				else
-					if((s.left(2) != "PR")&&(s.left(2) != "SP"))
+					if(s.left(2) != "PR")
 						portError_OR_timeout();
 }
 
@@ -408,10 +401,10 @@ void MainWindow::portError_OR_timeout()						//串口未正确打开或接收串
 {
 	timer1->stop();											//关闭定时器time1,并提示未能正确打开串口
 	motor_state->setText(QString::fromLocal8Bit("电机连接错误"));
-	if(!stopped)
-		collect_state->setText(QString::fromLocal8Bit("采集停止"));
-	stopped = true;											//采集停止
+	collect_state->setText(QString::fromLocal8Bit("采集停止"));
+	stopped = true;
 	QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口未能正确连接或接收命令超时"));
+	PortDialog->button_enabled();
 }
 
 void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的信息
@@ -421,15 +414,17 @@ void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的�
 	{
 		portname = re_need;
 		motor_state->setText(QString::fromLocal8Bit("电机已连接"));
+		PortDialog->button_enabled();
 	}
 	else
 		if(re_need.left(3) == "fai")
 		{
 			motor_state->setText(QString::fromLocal8Bit("电机未连接"));
 			QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
+			PortDialog->button_enabled();
 		}
 		else
-			if((re_need.left(3) == "SP=")||(re_need.left(3) == "MO;")||(re_need.left(3) == "AC;"))
+			if((re_need.left(3) == "AC;")||(re_need.left(3) == "DC=")||(re_need.left(3) == "MO;"))
 				thread_collect.transaction(portname,re_need);
 }
 
@@ -660,8 +655,7 @@ void MainWindow::collect_over()
 		qDebug() << "Sample overflow in batch.";
 	qDebug() << "Collect finished.";
 	collect_state->setText(QString::fromLocal8Bit("采集完成"));
-	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集完成"));		//设置界面提示窗口，提示采集完成
-	//	DeleteADQControlUnit(adq_cu);
+	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集结束"));
 }
 
 //双通道采集
@@ -864,33 +858,45 @@ void MainWindow::conncetdevice()
 	int n_of_failed = 0;
 	n_of_devices = ADQControlUnit_FindDevices(adq_cu);				//找到所有与电脑连接的ADQ，并创建一个指针列表，返回找到设备的总数
 	int n_of_ADQ212 = ADQControlUnit_NofADQ212(adq_cu);				//返回找到ADQ212设备的数量
-	n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);		//返回找到的单元数量
+	n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);
 
-	if(n_of_failed > 0)
+	if(portname.left(3)=="COM")
 	{
-		ADQ_state->setText(QString::fromLocal8Bit("采集卡未连接"));
-		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备启动失败"));
+		if((n_of_failed > 0)||(n_of_devices == 0))
+		{
+			ADQ_state->setText(QString::fromLocal8Bit("采集卡未连接"));
+			QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备连接失败"));
+		}
+		if(n_of_ADQ212 != 0)
+		{
+	//		char *BSN = ADQ212_GetBoardSerialNumber(adq_cu,1);			//设备序列号
+	//		int *Revision = ADQ212_GetRevision(adq_cu,1);				//返回设备的revision
+	//		qDebug() << BSN;
+	//		qDebug() << Revision[0];
+	//		qDebug() << Revision[1];
+	//		qDebug() << Revision[2];	//0-2是FPGA#2(comm)的信息，3-5是FPGA#1(alg)的信息
+	//		qDebug() << Revision[3];	//revision数
+	//		qDebug() << Revision[4];	//0表示SVN Managed，1表示Local Copy
+	//		qDebug() << Revision[5];	//0表示SVN Updated，1表示Mixed Revision
+			ADQ_state->setText(QString::fromLocal8Bit("采集卡已连接"));
+	//		QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集卡设备连接成功"));
+		}
 	}
-
-	if(n_of_devices == 0)
+	else
 	{
-		ADQ_state->setText(QString::fromLocal8Bit("采集卡未连接"));
-		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备连接失败"));
-	}
+		motor_state->setText(QString::fromLocal8Bit("电机未连接"));
+		portname.clear();
 
-	if(n_of_ADQ212 != 0)
-	{
-		char *BSN = ADQ212_GetBoardSerialNumber(adq_cu,1);			//设备序列号
-		int *Revision = ADQ212_GetRevision(adq_cu,1);				//返回设备的revision
-		qDebug() << BSN;
-		qDebug() << Revision[0];
-		qDebug() << Revision[1];
-		qDebug() << Revision[2];	//0-2是FPGA#2(comm)的信息，3-5是FPGA#1(alg)的信息
-		qDebug() << Revision[3];	//revision数
-		qDebug() << Revision[4];	//0表示SVN Managed，1表示Local Copy
-		qDebug() << Revision[5];	//0表示SVN Updated，1表示Mixed Revision
-		ADQ_state->setText(QString::fromLocal8Bit("采集卡已连接"));
-//		QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集卡设备连接成功"));
+		if((n_of_failed > 0)||(n_of_devices == 0))
+		{
+			ADQ_state->setText(QString::fromLocal8Bit("采集卡未连接"));
+			QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设备与串口均连接失败"));
+		}
+		if(n_of_ADQ212 != 0)
+		{
+			ADQ_state->setText(QString::fromLocal8Bit("采集卡已连接"));
+			QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("串口连接失败"));
+		}
 	}
 }
 
@@ -936,33 +942,9 @@ void MainWindow::search_port()
 	qDebug() << "portName = " << portname;
 }
 
-void MainWindow::search_failed_Show()
-{
-	if(portname.left(3) != "COM")
-	{
-		motor_state->setText(QString::fromLocal8Bit("电机未连接"));
-		QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("电机连接失败"));
-		portname.clear();
-	}
-	else
-	{
-		QString MO_set1("MO=1");
-		thread_collect.transaction(portname,MO_set1);
-	}
-}
-
-//检查存储线程运行状态
-bool MainWindow::check_threadStore()
-{
-	if(num_running == 0)
-		return true;
-	else
-		return false;
-}
-
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-	if((num_running != 0)&&stopped)		//检查存储线程是否完成数据存储
+	if((num_running != 0)||(stopped == false))		//检查存储线程是否完成数据存储
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
 		event->ignore();
