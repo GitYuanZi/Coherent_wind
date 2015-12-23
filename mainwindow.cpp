@@ -54,6 +54,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect_Motor = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
 
+	timer3 = new QTimer(this);
+	connect(timer3,SIGNAL(timeout()),this,SLOT(send_MS()));
+
 	connect(&threadA, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
 	connect(&threadB, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
 	connect(&threadC, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
@@ -237,7 +240,6 @@ void MainWindow::on_action_set_triggered()
 			dockleft_dlg->set_filename2(FileName_B);
 		}
 		refresh();					//更新绘图窗口
-		//start_position();			//驱动器初始位置
 	}
 	else
 		if(mysetting.singleCh)		//点击非确定键，则删除创建的plotwindow2窗口
@@ -252,7 +254,7 @@ void MainWindow::on_action_set_triggered()
 void MainWindow::start_position()
 {
 	int startAngle = mysetting.start_azAngle*800/3;			//初始角
-	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";BG;";
+	QString start_data = "SP="+QString::number(mysetting.SP*800/3)+";MO=1;PA="+QString::number(startAngle)+";MS;BG;MS;";
 	qDebug() << "start_data = " << start_data;				//PA为绝对转动
 	thread_collect.transaction(portname,start_data);			//设定驱动器的初始位置，命令为SP= ;MO=1;PA= ;BG;
 }
@@ -335,8 +337,9 @@ void MainWindow::on_action_start_triggered()
 //位置判断函数，利用定时器定时发送命令
 void MainWindow::collect_cond()
 {
-	QString judge("PX;");
+	QString judge("PX;MS;");
 	thread_collect.transaction(portname,judge);		//发送PX;接收返回值
+	qDebug() << QTime::currentTime().toString("hh:mm:ss");
 	qDebug() << "judge = " << judge;
 }
 
@@ -345,19 +348,17 @@ void MainWindow::receive_response(const QString &s)
 {
 	if(s.left(2) == "PX")
 	{
-		QString retResponse = s;							//当前位置返回值
-		qDebug() << "retResponse = " << retResponse;
-		QStringList retlist = retResponse.split(";");
-		QString ret1 = retlist.at(1).toLocal8Bit().data();	//获取PX的数值，即串口返回的当前位置值
-		int retData = ret1.toInt();							//ret1值转换为整型
-		qDebug() << "retData = " << retData;
-		PX1 = retData;
-
-		if(((PX0-2)<=PX1)&&(PX1<=(PX0+2)))					//当两个PX返回值相等，误差范围±2，判断是否到达下一组采集位置
+		QString retRespose = s;
+		QStringList retlist = retRespose.split(";");
+		QString ret1 = retlist.at(3).toLocal8Bit().data();
+		if(ret1 == "0")										//电机停止转动，判断位置是否正确
 		{
+			QString ret2 = retlist.at(1).toLocal8Bit().data();
+			int retData = ret2.toInt();
 			direction_angle = mysetting.start_azAngle+numbercollect*mysetting.step_azAngle;
 			int range = direction_angle*800/3;
-			if((onecollect_over == true)&&((range-120)<=retData)&&(retData<=(range+120)))//判断单次触发是否完成，串口线程是否运行完毕
+			qDebug() << "range = " << range;
+			if((onecollect_over == true)&&((range-30)<=retData)&&(retData<=(range+30)))
 			{
 				collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 				if(mysetting.singleCh)
@@ -366,7 +367,6 @@ void MainWindow::receive_response(const QString &s)
 					doublecollect();
 			}
 		}
-		PX0 = PX1;
 	}
 	else
 		if(s.left(2) == "SP")								//接收初始位置命令返回值,开始采集
@@ -379,7 +379,7 @@ void MainWindow::receive_response(const QString &s)
 				singleset();
 			else											//双通道采集
 				doubleset();
-			timer1->start(300);
+			timer1->start(200);
 		}
 		else
 			if(s.left(2) == "AC")							//返回电机当前位置值给串口对话框
@@ -390,11 +390,32 @@ void MainWindow::receive_response(const QString &s)
 				PortDialog->show_PX(res);					//在串口对话框中显示当前位置PX
 			}
 			else
-				if((s.left(2) == "MO")||(s.left(2) == "DC"))
-					PortDialog->button_enabled();
+				if(s.left(2) == "DC")
+					timer3->start(200);
 				else
-					if(s.left(2) != "PR")
-						portError_OR_timeout();
+					if(s.left(2) == "MO")
+						PortDialog->button_enabled();
+					else
+						if(s.left(2) == "MS")
+						{
+							QString MS_retstr = s;
+							QStringList strlist = MS_retstr.split(";");
+							QString MS_data = strlist.at(1).toLocal8Bit().data();
+							if(MS_data != "2")
+							{
+								timer3->stop();
+								PortDialog->button_enabled();
+							}
+						}
+						else
+							if(s.left(2) != "PR")
+								portError_OR_timeout();
+}
+
+void MainWindow::send_MS()
+{
+	QString MS_str("MS;");
+	thread_collect.transaction(portname,MS_str);
 }
 
 void MainWindow::portError_OR_timeout()						//串口未正确打开或接收串口命令超时
@@ -403,7 +424,7 @@ void MainWindow::portError_OR_timeout()						//串口未正确打开或接收串
 	motor_state->setText(QString::fromLocal8Bit("电机连接错误"));
 	collect_state->setText(QString::fromLocal8Bit("采集停止"));
 	stopped = true;
-	QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口未能正确连接或接收命令超时"));
+	QMessageBox::information(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("串口接收命令错误或超时"));
 	PortDialog->button_enabled();
 }
 
@@ -424,7 +445,7 @@ void MainWindow::receive_portdlg(const QString &re)	//接收对话框发送的�
 			PortDialog->button_enabled();
 		}
 		else
-			if((re_need.left(3) == "AC;")||(re_need.left(3) == "DC=")||(re_need.left(3) == "MO;"))
+			if((re_need.left(3) == "AC;")||(re_need.left(3) == "DC=")||(re_need.left(3) == "MO="))
 				thread_collect.transaction(portname,re_need);
 }
 

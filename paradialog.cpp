@@ -432,6 +432,7 @@ void paraDialog::update_show()
 	psetting.dataFileName_Prefix = time.toString("yyyyMMdd");
 	ui->lineEdit_dataFileName_Prefix->setText(psetting.dataFileName_Prefix);
 
+	on_pushButton_dataFileName_sch_clicked();
 	direct_size = 48+psetting.plsAccNum*psetting.sampleNum*2;
 	if(ui->radioButton_singleCh->isChecked())
 	{
@@ -522,8 +523,6 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找�
 		filter_str += "[0123456789]";
 
 	filter_str += ".wld";
-
-	qDebug() << filter_str;
 	QStringList FN_list;
 	QStringList filter(filter_str);
 
@@ -541,7 +540,6 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找�
 		tmp_num = fileInfo->at(i).baseName().right(suffix_l).toInt();
 		if (tmp_num > max_num)
 			max_num = tmp_num;
-		qDebug()<<FN_list;
 	}
 	max_num ++;
 	if(suffix_l<=8)

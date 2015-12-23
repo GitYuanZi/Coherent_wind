@@ -54,6 +54,8 @@ private slots:
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void receive_portdlg(const QString &re);
 
+	void send_MS();
+
 protected:
 	void closeEvent(QCloseEvent *event);			//程序关闭时，检查存储线程
 
@@ -127,6 +129,7 @@ private:
 
 	void conncetdevice(void);			//连接USB采集卡设备
 	void Create_DataFolder();			//数据存储文件夹的创建
+	QTimer *timer3;						//用于定时向串口发送MS
 };
 
 #endif // MAINWINDOW_H

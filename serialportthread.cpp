@@ -20,7 +20,7 @@ void SerialPortThread::transaction(const QString &portName, const QString &reque
 {
 	QMutexLocker locker(&mutex);
 	this->portName = portName;
-	this->waitTimeout = 200;
+	this->waitTimeout = 300;
 	this->request = request;
 	if(!isRunning())
 		start();
@@ -72,7 +72,7 @@ void SerialPortThread::run()
 			if(serial.waitForReadyRead(currentWaitTimeout))
 			{
 				QByteArray responseData = serial.readAll();
-				while(serial.waitForReadyRead(50))
+				while(serial.waitForReadyRead(80))
 					responseData += serial.readAll();
 				QString response(responseData);
 				emit this->response(response);

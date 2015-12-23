@@ -84,12 +84,14 @@ void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//
 	MotorConnect = c;
 	col_num = d;
 	nocoll = e;
+	opposite_status = false;								//初始时，相对转动与绝对转动状态均为false
+	absolute_status = false;
 
 	ui->lineEdit_serialportName->setText(portTested);		//串口名
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
-	ui->radioButton_CCW->setChecked(true);					//逆时针
+	ui->radioButton_CW->setChecked(true);					//顺时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
 	ui->lineEdit_PX->setText("0");							//当前位置
@@ -126,6 +128,8 @@ void portDialog::set_SP()
 
 void portDialog::on_pushButton_default_clicked()			//默认键
 {
+	opposite_status = false;								//默认的相对转动与绝对转动状态均为false
+	absolute_status = false;
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
@@ -155,50 +159,55 @@ void portDialog::on_pushButton_auto_searchPort_clicked()	//自动检测键
 
 void portDialog::on_pushButton_opposite_clicked()			//相对转动键
 {
-	ui->pushButton_opposite->setEnabled(false);
+	ui->pushButton_opposite->setEnabled(false);				//调整电机的按钮均为非使能状态
+	ui->pushButton_absolute->setEnabled(false);
+	ui->pushButton_setPXis0->setEnabled(false);
+	opposite_status = true;
+	absolute_status = false;
+
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	int opposite_angle = 800/3*ui->lineEdit_PR->text().toFloat();
+	opposite_angle = ui->lineEdit_PR->text().toFloat();
 	if(ui->radioButton_CW->isChecked())
-	{
-		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(opposite_angle));
-		px_data = px_data - ui->lineEdit_PR->text().toInt();
-	}
+		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(800/3*opposite_angle));
 	else
-	{
-		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(opposite_angle));
-		px_data = px_data + ui->lineEdit_PR->text().toInt();
-	}
+		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(800/3*opposite_angle));
 	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PR);
 	qDebug() << "request = " << request;
-	qDebug() << "px_data = " << px_data;
 	emit this->portdlg_send(request);
-
-	ui->lineEdit_PX->setText(QString::number(px_data));
 }
 
 void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 {
 	ui->pushButton_absolute->setEnabled(false);
+	ui->pushButton_opposite->setEnabled(false);
+	ui->pushButton_setPXis0->setEnabled(false);
+	opposite_status = false;
+	absolute_status = true;
+
 	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	int absolute_angle = 800/3*ui->lineEdit_PA->text().toFloat();
+	absolute_angle = ui->lineEdit_PA->text().toFloat();
 	if(ui->radioButton_CW->isChecked())
-		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(absolute_angle));
+		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(800/3*absolute_angle));
 	else
-		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(absolute_angle));
+		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(800/3*absolute_angle));
 	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PA);
 	qDebug() << "request = " << request;
 	emit this->portdlg_send(request);
-
-	px_data = ui->lineEdit_PA->text().toInt();
-	ui->lineEdit_PX->setText(QString::number(px_data));
 }
 
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 {
 	ui->pushButton_setPXis0->setEnabled(false);
+	ui->pushButton_absolute->setEnabled(false);
+	ui->pushButton_setPXis0->setEnabled(false);
+	opposite_status = false;
+	absolute_status = false;
+
 	request = "MO=0;PX=0;MO=1;";
 	qDebug() << "request = " << request;
 	emit this->portdlg_send(request);
+	px_data = 0;
+	ui->lineEdit_PX->setText(QString::number(px_data));
 }
 
 void portDialog::show_PX(const QString &px_show)
@@ -210,6 +219,20 @@ void portDialog::show_PX(const QString &px_show)
 
 void portDialog::button_enabled()
 {
+	if(opposite_status == true)
+	{
+		px_data = px_data + opposite_angle;
+		ui->lineEdit_PX->setText(QString::number(px_data));
+	}
+	else
+		if(absolute_status == true)
+		{
+			px_data = absolute_angle;
+			ui->lineEdit_PX->setText(QString::number(px_data));
+		}
+	opposite_status = false;
+	absolute_status = false;
+	ui->pushButton_auto_searchPort->setEnabled(true);
 	ui->pushButton_absolute->setEnabled(true);
 	ui->pushButton_opposite->setEnabled(true);
 	ui->pushButton_setPXis0->setEnabled(true);

@@ -69,6 +69,10 @@ private:
 	bool nocoll;				//是否正在采集
 	QString px_str;
 	int px_data;
+	int opposite_angle;
+	int absolute_angle;
+	bool absolute_status;		//绝对转动状态
+	bool opposite_status;		//相对转动状态
 };
 
 #endif // PORTDIALOG_H
