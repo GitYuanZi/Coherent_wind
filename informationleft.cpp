@@ -23,18 +23,10 @@ informationleft::~informationleft()
 
 void informationleft::set_currentAngle(quint16 a)		//当前角度、圆盘示意图
 {
-	currentAngle = a;
-	QString str;
-	str = QString::number(currentAngle) + QString::fromLocal8Bit("°");
+	QString str = QString::number(a) + QString::fromLocal8Bit("°");
 	ui->label_currentAngle->setText(str);
-//	ui->Compass->setNeedle(new QwtCompassWindArrow(QwtCompassWindArrow::Style2));
-//	quint16 b = 360 + 90 - a;
-//	if(b > 360)
-//		b = b -360;
-//	ui->Compass->setValue(b);
 	ui->Dial->setNeedle(new QwtDialSimpleNeedle(QwtDialSimpleNeedle::Arrow,true,Qt::gray));
 	ui->Dial->setValue(a);
-
 }
 
 void informationleft::set_groupNum(quint32 a)			//总组数

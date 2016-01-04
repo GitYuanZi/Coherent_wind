@@ -12,17 +12,18 @@ portDialog::portDialog(QWidget *parent) :
 	ui(new Ui::portDialog)
 {
 	ui->setupUi(this);
+
+	timer1= new QTimer(this);
+	connect(timer1,SIGNAL(timeout()),this,SLOT(DemandPX()));
+
+	connect(&thread_port,SIGNAL(response(QString)),this,SLOT(receive_response(QString)));
+	connect(&thread_port,SIGNAL(S_PortNotOpen()),this,SLOT(portError_OR_timeout()));
+	connect(&thread_port,SIGNAL(timeout()),this,SLOT(portError_OR_timeout()));
 }
 
 portDialog::~portDialog()
 {
 	delete ui;
-}
-
-int portDialog::get_returnSet()								//返回SP值给主程序
-{
-	retSP = ui->lineEdit_SP->text().toInt();
-	return retSP;
 }
 
 bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主程序
@@ -31,10 +32,14 @@ bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主
 	return MotorConnect;
 }
 
-void portDialog::search_port()								//搜索串口函数
+void portDialog::search_set_port(int Sp)
 {
+	portDia_status = false;
+	retSP = Sp;												//对话框接收SP值
 	ui->pushButton_auto_searchPort->setEnabled(false);
-	portTested.clear();
+
+	//搜索串口函数
+	portname.clear();
 	QSerialPort my_serial;
 	foreach (const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
 	{
@@ -60,65 +65,55 @@ void portDialog::search_port()								//搜索串口函数
 				QString response(testResponse);
 				if(response.left(10) == "VR;Whistle")
 				{
-					portTested = info.portName();
-					ui->lineEdit_serialportName->setText(portTested);
+					portname = info.portName();
+					ui->lineEdit_serialportName->setText(portname);
 					break;
 				}
 			}
 		}
 	}
 	my_serial.close();
-	if(portTested.left(3) != "COM")
-	{
-		QString fail = "fai";
-		emit this->portdlg_send(fail);
-	}
+
+	if(portname.left(3) == "COM")
+		OpenMotor();										//打开电机
 	else
-		emit this->portdlg_send(portTested);
+		qDebug() << "SerialPort error.";
 }
 
-void portDialog::inital_data(const QString &a,int b, bool c, quint32 d,bool e)//初始数据函数
+void portDialog::initial_data( bool c, quint32 d,bool e)		//初始数据
 {
-	portTested = a;
-	retSP = b;
-	MotorConnect = c;
-	col_num = d;
-	nocoll = e;
-	opposite_status = false;								//初始时，相对转动与绝对转动状态均为false
-	absolute_status = false;
+	MotorConnect = c;										//连接电机的bool值
+	collectNum = d;											//采集的组数
+	Not_collect = e;										//正在采集的bool值
+	portDia_status = false;
 
-	ui->lineEdit_serialportName->setText(portTested);		//串口名
+	ui->lineEdit_serialportName->setText(portname);			//串口名
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
 	ui->radioButton_CW->setChecked(true);					//顺时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
-	ui->lineEdit_PX->setText("0");							//当前位置
-	if(nocoll  == false)									//若正在采集，界面除取消键，其他均为非使能状态
-	{
-		ui->groupBox->setEnabled(false);
-		ui->groupBox_2->setEnabled(false);
-		ui->groupBox_3->setEnabled(false);
-		ui->groupBox_4->setEnabled(false);
-		ui->groupBox_motor->setEnabled(false);
-		ui->pushButton_default->setEnabled(false);
-		ui->pushButton_sure->setEnabled(false);
-	}
 	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
-	if(col_num == 1)
+
+	if(Not_collect  == false)								//若正在采集，界面除取消键，其他均为非使能状态
 	{
-		ui->groupBox_motor->setEnabled(true);
-		ui->checkBox_motor_connected->setChecked(MotorConnect);
+		ui->groupBox->setEnabled(false);					//通信设置box
+		ui->groupBox_2->setEnabled(false);					//转动参数设定box
+		ui->groupBox_3->setEnabled(false);					//直接控制box
+		ui->groupBox_4->setEnabled(false);					//当前位置设定box
+		ui->groupBox_motor->setEnabled(false);				//单方向采集box
+		ui->pushButton_default->setEnabled(false);			//默认键
+		ui->pushButton_sure->setEnabled(false);				//确定键
 	}
+	if(collectNum == 1)										//单方向采集，box为使能状态
+		ui->groupBox_motor->setEnabled(true);
 	else
 		ui->groupBox_motor->setEnabled(false);
-	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::set_SP);
-	QString position = "AC;PX;";
-	emit this->portdlg_send(position);
+	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&portDialog::SPchanged);
 }
 
-void portDialog::set_SP()
+void portDialog::SPchanged()
 {
 	if(ui->lineEdit_SP->text().toInt() > 90)
 		ui->lineEdit_SP->setText("90");
@@ -128,17 +123,18 @@ void portDialog::set_SP()
 
 void portDialog::on_pushButton_default_clicked()			//默认键
 {
-	opposite_status = false;								//默认的相对转动与绝对转动状态均为false
-	absolute_status = false;
+	portDia_status = false;
 	ui->lineEdit_SP->setText(QString::number(retSP));		//速度
 	ui->lineEdit_AC->setText("180");						//加速度
 	ui->lineEdit_DC->setText("180");						//减速度
 	ui->radioButton_CCW->setChecked(true);					//逆时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
-	ui->lineEdit_PX->setText("0");							//当前位置
 	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
-	if(col_num != 1)
+
+	if(collectNum == 1)										//单方向采集，box为使能状态
+		ui->groupBox_motor->setEnabled(true);
+	else
 		ui->groupBox_motor->setEnabled(false);
 }
 
@@ -154,45 +150,28 @@ void portDialog::on_pushButton_cancel_clicked()				//取消键
 
 void portDialog::on_pushButton_auto_searchPort_clicked()	//自动检测键
 {
-	search_port();
+	search_set_port(retSP);
 }
 
-void portDialog::on_pushButton_opposite_clicked()			//相对转动键
+void portDialog::on_pushButton_relative_clicked()			//相对转动键
 {
-	ui->pushButton_opposite->setEnabled(false);				//调整电机的按钮均为非使能状态
+	ui->pushButton_relative->setEnabled(false);
 	ui->pushButton_absolute->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
-	opposite_status = true;
-	absolute_status = false;
-
-	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	opposite_angle = ui->lineEdit_PR->text().toFloat();
+	portDia_status = true;
 	if(ui->radioButton_CW->isChecked())
-		dialog_PR = QString("MO=1;PR=%1;").arg(QString::number(800/3*opposite_angle));
+		CW_Rotate(ui->lineEdit_PR->text().toInt());
 	else
-		dialog_PR = QString("MO=1;PR=-%1;").arg(QString::number(800/3*opposite_angle));
-	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PR);
-	qDebug() << "request = " << request;
-	emit this->portdlg_send(request);
+		CCW_Rotate(ui->lineEdit_PR->text().toInt());
 }
 
 void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 {
 	ui->pushButton_absolute->setEnabled(false);
-	ui->pushButton_opposite->setEnabled(false);
+	ui->pushButton_relative->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
-	opposite_status = false;
-	absolute_status = true;
-
-	dialog_SP = QString("SP=%1;").arg(QString::number(int((ui->lineEdit_SP->text().toFloat())*800/3)));
-	absolute_angle = ui->lineEdit_PA->text().toFloat();
-	if(ui->radioButton_CW->isChecked())
-		dialog_PA = QString("MO=1;PA=%1;").arg(QString::number(800/3*absolute_angle));
-	else
-		dialog_PA = QString("MO=1;PA=-%1;").arg(QString::number(800/3*absolute_angle));
-	request = QString("DC=48000;AC=48000;%1%2BG;").arg(dialog_SP).arg(dialog_PA);
-	qDebug() << "request = " << request;
-	emit this->portdlg_send(request);
+	portDia_status = true;
+	ABS_Rotate(ui->lineEdit_PA->text().toInt());
 }
 
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
@@ -200,40 +179,117 @@ void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 	ui->pushButton_setPXis0->setEnabled(false);
 	ui->pushButton_absolute->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
-	opposite_status = false;
-	absolute_status = false;
-
-	request = "MO=0;PX=0;MO=1;";
-	qDebug() << "request = " << request;
-	emit this->portdlg_send(request);
-	px_data = 0;
-	ui->lineEdit_PX->setText(QString::number(px_data));
+	portDia_status = true;
+	SetPX(ui->lineEdit_PX->text().toInt());
 }
 
-void portDialog::show_PX(const QString &px_show)
+void portDialog::show_PX(int px_show)
 {
-	px_str = px_show;
-	px_data = px_str.toInt()*3/800;
-	ui->lineEdit_PX->setText(QString::number(px_data));
+	if(PX_data == px_show)
+		ui->lineEdit_PX->setText(QString::number(px_show));
 }
 
-void portDialog::button_enabled()
+void portDialog::update_status()
 {
-	if(opposite_status == true)
-	{
-		px_data = px_data + opposite_angle;
-		ui->lineEdit_PX->setText(QString::number(px_data));
-	}
-	else
-		if(absolute_status == true)
-		{
-			px_data = absolute_angle;
-			ui->lineEdit_PX->setText(QString::number(px_data));
-		}
-	opposite_status = false;
-	absolute_status = false;
 	ui->pushButton_auto_searchPort->setEnabled(true);
 	ui->pushButton_absolute->setEnabled(true);
-	ui->pushButton_opposite->setEnabled(true);
+	ui->pushButton_relative->setEnabled(true);
 	ui->pushButton_setPXis0->setEnabled(true);
+	portDia_status = false;
+}
+
+void portDialog::ABS_Rotate(int Pa)
+{
+	qDebug() << "start position";
+	PX_data = Pa;
+	Order_str = "PA="+QString::number(Pa*800/3)+";SP="+QString::number(retSP*800/3)+";BG;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::CW_Rotate(int Pr)
+{
+	PX_data = PX_data + Pr;
+	Order_str = "PR="+QString::number(Pr*800/3)+";SP="+QString::number(retSP*800/3)+";BG;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::CCW_Rotate(int Pr)
+{
+	PX_data = PX_data - Pr;
+	Order_str = "PR=-"+QString::number(Pr*800/3)+";BG;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::SetPX(int Px)
+{
+	Order_str = "MO=0;PX="+QString::number(Px*800/3)+";MO=1;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::SetSP(int Sp)
+{
+	Order_str = "SP="+QString::number(Sp*800/3)+";AC=48000;DC=48000;PX;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::OpenMotor()
+{
+	Order_str = "MO=1;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::DemandPX()
+{
+	qDebug() << "timer1 start";
+	Order_str = "PX;MS;";
+	thread_port.transaction(portname,Order_str);
+}
+
+void portDialog::receive_response(const QString &s)
+{
+	QString res = s;
+	if((s.left(2) == "PA")||(s.left(2) == "PR"))
+		timer1->start(60);									//打开定时器timer1
+	else
+		if(s.left(2) == "PX")								//获取当前位置值
+		{
+			QStringList list = res.split(";");
+			QString ret1 = list.at(1).toLocal8Bit().data();	//PX值
+			QString ret2 = list.at(3).toLocal8Bit().data();	//MS值
+			if(ret2 == "0")
+				timer1->stop();								//电机停止转动，关闭定时器
+
+			int ret1_data = ret1.toFloat()*3/800+0.5;
+			emit this->SendPX(ret1_data);					//更新左侧栏圆盘
+
+			if(portDia_status)
+			{
+				show_PX(ret1_data);							//对话框显示当前PX值
+				if(ret2 == "0")
+					update_status();
+			}
+			else
+				if(ret2 == "0")
+				{
+					if(PX_data == ret1_data)
+						emit this->Position_success();		//电机到达预定位置
+					else
+						emit this->Position_Error();		//位置错误
+				}
+		}
+		else
+			if(s.left(2) == "MO")
+			{			
+				if(s.left(4) == "MO=1")						//MO=1,打开电机后，设置速度SP
+					SetSP(retSP);
+				if(s.left(4) == "MO=0")						//MO=0,设置当前位置后，更新对话框中的按钮
+					update_status();
+			}
+}
+
+void portDialog::portError_OR_timeout()						//串口未能打开或连接超时
+{
+	timer1->stop();											//关闭定时器
+	if(portDia_status)
+		update_status();									//更新对话框按钮
 }

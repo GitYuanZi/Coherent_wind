@@ -271,7 +271,7 @@
      <string>逆时针</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pushButton_opposite">
+   <widget class="QPushButton" name="pushButton_relative">
     <property name="geometry">
      <rect>
       <x>20</x>

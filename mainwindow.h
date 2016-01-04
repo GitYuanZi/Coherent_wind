@@ -10,7 +10,6 @@
 #include "threadstore.h"
 #include "settingfile.h"
 #include "portdialog.h"
-#include "serialportthread.h"
 
 #include <QByteArray>
 #include <QDataStream>
@@ -37,24 +36,21 @@ private slots:
 
 	void on_action_searchDevice_triggered();		//搜索键
 	void on_action_open_triggered();				//打开键
-//	void on_action_saveAs_triggered();				//另存为键
 	void on_action_set_triggered();					//设置键
 	void on_action_start_triggered();				//开始键
 	void on_action_stop_triggered();				//停止键
 	void on_action_serialport_triggered();
 
 	void singlecollect(void);						//单通道采集及存储
-	void collect_cond();
 	void doublecollect(void);						//双通道采集及存储
 	void notrig_over();								//无外部触发信号
 	void collect_over();							//采集结束用于关闭multi-record
 
-	void receive_response(const QString &s);		//串口线程发送命令后的返回值
-	void portError_OR_timeout();					//串口未成功打开时或接收串口命令超时
+	void judge_collect_condition();					//用于判断是否进行采集
 	void receive_storefinish();						//存储线程完成，线程数减1
-	void receive_portdlg(const QString &re);
-
-	void send_MS();
+	void Motor_Position(int a);						//获取当前位置，更新圆盘Dial
+	void Motor_Rotating();
+	void set_stop();								//stopped值置为true
 
 protected:
 	void closeEvent(QCloseEvent *event);			//程序关闭时，检查存储线程
@@ -62,16 +58,11 @@ protected:
 private:
     Ui::MainWindow *ui;
     paraDialog *ParaSetDlg;
-	portDialog *PortDialog;							//串口的对话框
-	SerialPortThread thread_collect;					//串口读写线程
+	portDialog *PortDialog;							//串口的对话
 
-	QString portname;								//连接的串口名
-	QString request_send;							//发送给串口的命令
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
-	void search_port();								//串口搜索
-	void start_position();							//驱动器的初始角位置
-	int PX0, PX1;									//驱动器返回的PX值
 	bool connect_Motor;								//单方向采集连接电机
+	bool reach_position;							//电机达到待采集方位
 
     ACQSETTING mysetting;
 
@@ -90,7 +81,7 @@ private:
 	void refresh(void);								//设置完后关于绘图部分更新
 	void resizeEvent(QResizeEvent *event);			//主窗口大小改变时
 
-	QTimer *timer1;				//通道定时器
+	QTimer *timer_judge;		//判断是否满足采集条件
 	QTimer *timer2;				//判断定时器
 	void singleset(void);		//单通道参数设置
 	void doubleset(void);		//双通道参数设置
@@ -115,12 +106,8 @@ private:
 	bool stopped;				//停止采集
 
 	QString timestr;			//采集时间
-	uint direction_angle;		//方位角
+	int direction_angle;		//方位角
     void *adq_cu;
-//	int trig_mode;				//触发模式
-//	qint16 trig_level;			//触发电平
-//	int trig_flank;				//触发边沿
-//	int trig_channel;			//触发通道
     int clock_source ;
 	int pll_divider;					//PLL分频数，和采样频率有关
 	unsigned int number_of_records;		//脉冲数
@@ -129,7 +116,7 @@ private:
 
 	void conncetdevice(void);			//连接USB采集卡设备
 	void Create_DataFolder();			//数据存储文件夹的创建
-	QTimer *timer3;						//用于定时向串口发送MS
+
 };
 
 #endif // MAINWINDOW_H

@@ -25,7 +25,6 @@ public slots:
 private:
     Ui::informationleft *ui;
 
-    quint16 currentAngle;
 	quint16 groupNum;						//总组数
 	int groupcnt;							//采集组数
 };

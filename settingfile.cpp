@@ -117,8 +117,8 @@ void settingFile::test_create_file(const QString &c,const QString &d)
 	{
 		settings.beginGroup("Laser_parameters");
 		settings.setValue("laserRPF",10000);				//激光重频
-		settings.setValue("laserPulseWidth",140);			//激光脉宽
-		settings.setValue("laserWaveLength",20);			//激光波长
+		settings.setValue("laserPulseWidth",500);			//激光脉宽
+		settings.setValue("laserWaveLength",1540);			//激光波长
 		settings.setValue("AOM_Freq",120);					//AOM移频量
 		settings.endGroup();
 
