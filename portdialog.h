@@ -20,7 +20,7 @@ public:
 	void initial_data(bool c,quint32 d,bool e);//默认的设置参数
 	void search_set_port(int Sp);
 	bool get_returnMotor_connect();			//返回连接电机的bool值给主程序
-	void show_PX(int px_show);				//显示当前位置
+	void show_PX(float px_show);			//显示当前位置
 	void update_status();					//更新按钮状态
 
 	void ABS_Rotate(int Pa);				//绝对转动
@@ -32,7 +32,7 @@ public:
 
 signals:
 	void portdlg_send(const QString &re);	//对话框返回字符串到主程序
-	void SendPX(int a);						//PX值发送给主程序
+	void SendPX(float a);					//PX值发送给主程序
 	void Position_success();				//电机到达预定位置
 	void Position_Error();					//电机未达到预定位置
 
@@ -65,6 +65,7 @@ private:
 	QString Order_str;			//待发送给电机的字符串命令
 	QTimer *timer1;				//定时器，用于定时检查当前位置
 	bool portDia_status;		//串口对话框打开状态
+	bool handle_PX;				//正在处理PX值
 };
 
 #endif // PORTDIALOG_H

@@ -44,12 +44,13 @@ private slots:
 	void singlecollect(void);						//单通道采集及存储
 	void doublecollect(void);						//双通道采集及存储
 	void notrig_over();								//无外部触发信号
-	void collect_over();							//采集结束用于关闭multi-record
+	void collect_reset();							//采集结束后停止时，关闭multi-record和stopped
+	void collect_over();							//采集结束
 
 	void judge_collect_condition();					//用于判断是否进行采集
 	void receive_storefinish();						//存储线程完成，线程数减1
-	void Motor_Position(int a);						//获取当前位置，更新圆盘Dial
-	void Motor_Rotating();
+	void Motor_Position(float a);					//获取当前位置，更新圆盘Dial
+	void Motor_Arrived();							//电机到达预采集方位
 	void set_stop();								//stopped值置为true
 
 protected:
@@ -116,6 +117,7 @@ private:
 
 	void conncetdevice(void);			//连接USB采集卡设备
 	void Create_DataFolder();			//数据存储文件夹的创建
+	int PX_lastData;					//采集结束或停止时的电机位置
 
 };
 

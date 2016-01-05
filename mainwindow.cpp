@@ -27,8 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 	QDir dirs;
 	QString paths = dirs.currentPath()+"/"+"settings.ini";				//获取初始默认路径，并添加默认配置文件
-	QString prefix_date = QDateTime::currentDateTime().toString("yyyyMMdd");
-	m_setfile.test_create_file(paths,prefix_date);						//检查settings.ini是否存在，若不存在则创建
+	m_setfile.test_create_file(paths);									//检查settings.ini是否存在，若不存在则创建
 	m_setfile.readFrom_file(paths);										//读取settings.ini文件
 	mysetting = m_setfile.get_setting();								//mysetting获取文件中的参数
 
@@ -37,21 +36,18 @@ MainWindow::MainWindow(QWidget *parent) :
 	Create_statusbar();													//状态栏
 
 	adq_cu = CreateADQControlUnit();
-	qDebug() << "adq_cu = " << adq_cu;
 	conncetdevice();													//连接采集卡设备
-
-	PortDialog = new portDialog(this);
-	PortDialog->search_set_port(mysetting.SP);							//搜索并设置串口
-	connect(PortDialog,SIGNAL(SendPX(int)),this,SLOT(Motor_Position(int)));
-	connect(PortDialog,SIGNAL(Position_success()),this,SLOT(Motor_Rotating()));
-	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(set_stop()));
-
-	timer_judge = new QTimer(this);
-	connect(timer_judge,SIGNAL(timeout()),this,SLOT(judge_collect_condition()));
-
 	timer2 = new QTimer(this);											//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
 	timer2->setSingleShot(true);
 	connect(timer2,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
+
+	PortDialog = new portDialog(this);
+	PortDialog->search_set_port(mysetting.SP);							//搜索并设置串口
+	connect(PortDialog,SIGNAL(SendPX(float)),this,SLOT(Motor_Position(float)));
+	connect(PortDialog,SIGNAL(Position_success()),this,SLOT(Motor_Arrived()));
+	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(set_stop()));
+	timer_judge = new QTimer(this);
+	connect(timer_judge,SIGNAL(timeout()),this,SLOT(judge_collect_condition()));
 
 	connect_Motor = true;												//单方向探测默认连接电机
 	stopped = true;														//初始状态，未进行数据采集
@@ -83,9 +79,6 @@ void MainWindow::creatleftdock(void)
 	dockleft_dlg->set_currentAngle(mysetting.start_azAngle);
 	dockleft_dlg->set_groupNum(mysetting.angleNum);
 	dockleft_dlg->set_groupcnt(0);
-
-	QDateTime filepredate = QDateTime::currentDateTime();
-	mysetting.dataFileName_Prefix = filepredate.toString("yyyyMMdd");	//将文件名前缀更新至最新日期
 
 	if(mysetting.singleCh)
 	{
@@ -306,26 +299,32 @@ void MainWindow::on_action_start_triggered()
 	}
 }
 
-void MainWindow::Motor_Position(int a)
+void MainWindow::Motor_Position(float a)
 {
+	PX_lastData = a;
 	dockleft_dlg->set_currentAngle(a);				//更新角度、Dial显示
 }
 
-void MainWindow::Motor_Rotating()					//到达预采集位置
+void MainWindow::Motor_Arrived()					//到达预采集位置
 {
 	reach_position = true;
+	qDebug() << "reach_position = true";
 }
 
 void MainWindow::judge_collect_condition()			//判断是否满足进行采集的条件
 {
-	if((reach_position == true)&&(onecollect_over == true)&&(stopped == false))
+	qDebug() << "judge_collect_condition";
+	if((reach_position == true)&&(onecollect_over == true))
 	{
-		collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 		timer_judge->stop();
-		if(mysetting.singleCh)
-			singlecollect();
-		else
-			doublecollect();
+		if(stopped == false)
+		{
+			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
+			if(mysetting.singleCh)
+				singlecollect();
+			else
+				doublecollect();
+		}
 	}
 }
 
@@ -392,7 +391,6 @@ void MainWindow::singleset()
 		QMessageBox::warning(this,QString::fromLocal8Bit("Error"),QString::fromLocal8Bit("SampleNum"));
 		return;
 	}
-	qDebug() << "singlecollect over";
 }
 
 //单通道采集和存储
@@ -444,6 +442,7 @@ void MainWindow::singlecollect()
 		unsigned int samples_to_collect = samples_per_record;
 		while(samples_to_collect > 0)
 		{
+			QCoreApplication::processEvents();
 			int collect_result = ADQ212_CollectRecord(adq_cu,1,i);
 			unsigned int samples_in_buffer = qMin(ADQ212_GetSamplesPerPage(adq_cu,1),samples_to_collect);
 
@@ -458,9 +457,13 @@ void MainWindow::singlecollect()
 			}
 			else
 			{
-				qDebug() << "Collect next data page failed!";
 				samples_to_collect = 0;
 				i = number_of_records;
+				delete[] rd_data1;
+				collect_reset();
+				QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
+				onecollect_over = true;
+				return;
 			}
 		}
 	}
@@ -507,7 +510,7 @@ void MainWindow::singlecollect()
 				else										//四个线程都在运行时，停止采集
 				{
 					delete[] rd_data1;
-					collect_over();
+					collect_reset();
 					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
 					onecollect_over = true;
 					return;
@@ -537,10 +540,7 @@ void MainWindow::singlecollect()
 //采集卡未检测到外部触发信号
 void MainWindow::notrig_over()
 {
-	timer_judge->stop();
-	stopped = true;
-	ADQ212_DisarmTrigger(adq_cu,1);
-	ADQ212_MultiRecordClose(adq_cu,1);
+	collect_reset();
 	collect_state->setText(QString::fromLocal8Bit("采集停止"));
 	QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
 }
@@ -548,12 +548,21 @@ void MainWindow::notrig_over()
 //采集结束处理函数
 void MainWindow::collect_over()
 {
-	timer_judge->stop();
+	collect_reset();
+	collect_state->setText(QString::fromLocal8Bit("采集完成"));
+	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集结束"));
+}
+
+void MainWindow::collect_reset()
+{
+	if(PX_lastData>=360)
+	{
+		PX_lastData = PX_lastData%360;
+		PortDialog->SetPX(PX_lastData);
+	}
 	stopped = true;
 	ADQ212_DisarmTrigger(adq_cu,1);
 	ADQ212_MultiRecordClose(adq_cu,1);
-	collect_state->setText(QString::fromLocal8Bit("采集完成"));
-	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集结束"));
 }
 
 //双通道采集
@@ -647,6 +656,7 @@ void MainWindow::doublecollect()
 		unsigned int samples_to_collect = samples_per_record;
 		while(samples_to_collect > 0)
 		{
+			QCoreApplication::processEvents();
 			int collect_result = ADQ212_CollectRecord(adq_cu,1,i);
 			unsigned int samples_in_buffer = qMin(ADQ212_GetSamplesPerPage(adq_cu,1),samples_to_collect);
 
@@ -663,9 +673,14 @@ void MainWindow::doublecollect()
 			}
 			else
 			{
-				qDebug() << "Collect next data page failed!";
 				samples_to_collect = 0;
-				i = number_of_records;		//为了跳出for循环
+				i = number_of_records;
+				delete[] rd_dataa;
+				delete[] rd_datab;
+				collect_reset();
+				QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡出现故障"));
+				onecollect_over = true;
+				return;
 			}
 		}
 	}
@@ -713,7 +728,7 @@ void MainWindow::doublecollect()
 				{
 					delete[] rd_dataa;
 					delete[] rd_datab;
-					collect_over();
+					collect_reset();
 					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
 					onecollect_over = true;
 					return;

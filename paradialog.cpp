@@ -29,7 +29,7 @@ void paraDialog::init_setting(const ACQSETTING &setting, bool sop)
 	psetting = setting;
 	defaulsetting = setting;
 	dlg_setfile.init_fsetting(psetting);						//把psetting传递给fsetting
-	nocollecting = sop;
+	nocollecting = sop;											//程序未进行采集
 }
 
 void paraDialog::initial_para()
@@ -405,9 +405,6 @@ void paraDialog::update_show()
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
 	ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
-
-	if(nocollecting == false)																		//若程序采集，确定键为非使能状态
-		ui->pushButton_sure->setEnabled(false);
 																							//下方参考信息
 	show_detect_mode();																		//探测方式
 	if(psetting.step_azAngle == 0)															//扫描探测box
@@ -629,7 +626,10 @@ void paraDialog::single_filesize()
 	else
 	{
 		ui->pushButton_save->setEnabled(true);
-		ui->pushButton_sure->setEnabled(true);
+		if(nocollecting == false)																		//若程序采集，确定键为非使能状态
+			ui->pushButton_sure->setEnabled(false);
+		else
+			ui->pushButton_sure->setEnabled(true);
 		ui->comboBox_sampleFreq->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
 		ui->lineEdit_detRange->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
 		ui->lineEdit_plsAccNum->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
@@ -652,7 +652,10 @@ void paraDialog::double_filesize()
 	else
 	{
 		ui->pushButton_save->setEnabled(true);
-		ui->pushButton_sure->setEnabled(true);
+		if(nocollecting == false)																		//若程序采集，确定键为非使能状态
+			ui->pushButton_sure->setEnabled(false);
+		else
+			ui->pushButton_sure->setEnabled(true);
 		ui->comboBox_sampleFreq->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
 		ui->lineEdit_detRange->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");
 		ui->lineEdit_plsAccNum->setStyleSheet("color: black;""font-size:12pt;""font-family:'Microsoft YaHei UI';");

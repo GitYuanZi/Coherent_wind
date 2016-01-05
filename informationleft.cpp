@@ -21,9 +21,11 @@ informationleft::~informationleft()
 	delete ui;
 }
 
-void informationleft::set_currentAngle(quint16 a)		//当前角度、圆盘示意图
+void informationleft::set_currentAngle(float a)		//当前角度、圆盘示意图
 {
-	QString str = QString::number(a) + QString::fromLocal8Bit("°");
+	while(a>360)
+		a = a - 360;
+	QString str = QString::number(a,'f',2) + QString::fromLocal8Bit("°");
 	ui->label_currentAngle->setText(str);
 	ui->Dial->setNeedle(new QwtDialSimpleNeedle(QwtDialSimpleNeedle::Arrow,true,Qt::gray));
 	ui->Dial->setValue(a);

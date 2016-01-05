@@ -3,6 +3,7 @@
 #include <QSettings>
 #include <QDebug>
 #include <QtCore>
+#include <QDateTime>
 #include "Acqsettings.h"
 
 settingFile::settingFile()
@@ -107,10 +108,10 @@ void settingFile::checkValid()
 }
 
 //检查settings.ini是否存在，若不存在则创建
-void settingFile::test_create_file(const QString &c,const QString &d)
+void settingFile::test_create_file(const QString &c)
 {
 	QString path_c = c;
-	QString prefix_str = d;
+	QString prefix_str = QDateTime::currentDateTime().toString("yyyyMMdd");				//获取当前日期
 	QFileInfo file(path_c);
 	QSettings settings(path_c,QSettings::IniFormat);
 	if(file.exists() == false)

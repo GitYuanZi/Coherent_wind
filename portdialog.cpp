@@ -19,6 +19,7 @@ portDialog::portDialog(QWidget *parent) :
 	connect(&thread_port,SIGNAL(response(QString)),this,SLOT(receive_response(QString)));
 	connect(&thread_port,SIGNAL(S_PortNotOpen()),this,SLOT(portError_OR_timeout()));
 	connect(&thread_port,SIGNAL(timeout()),this,SLOT(portError_OR_timeout()));
+	handle_PX = false;
 }
 
 portDialog::~portDialog()
@@ -183,10 +184,9 @@ void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 	SetPX(ui->lineEdit_PX->text().toInt());
 }
 
-void portDialog::show_PX(int px_show)
+void portDialog::show_PX(float px_show)
 {
-	if(PX_data == px_show)
-		ui->lineEdit_PX->setText(QString::number(px_show));
+	ui->lineEdit_PX->setText(QString::number(px_show,'f',2));
 }
 
 void portDialog::update_status()
@@ -241,25 +241,29 @@ void portDialog::OpenMotor()
 void portDialog::DemandPX()
 {
 	qDebug() << "timer1 start";
-	Order_str = "PX;MS;";
-	thread_port.transaction(portname,Order_str);
+	if(handle_PX == false)
+	{
+		Order_str = "PX;MS;";
+		thread_port.transaction(portname,Order_str);
+	}
 }
 
 void portDialog::receive_response(const QString &s)
 {
 	QString res = s;
 	if((s.left(2) == "PA")||(s.left(2) == "PR"))
-		timer1->start(60);									//打开定时器timer1
+		timer1->start(80);									//打开定时器timer1
 	else
 		if(s.left(2) == "PX")								//获取当前位置值
 		{
+			handle_PX = true;								//正在处理PX;MS;命令
 			QStringList list = res.split(";");
 			QString ret1 = list.at(1).toLocal8Bit().data();	//PX值
 			QString ret2 = list.at(3).toLocal8Bit().data();	//MS值
 			if(ret2 == "0")
 				timer1->stop();								//电机停止转动，关闭定时器
 
-			int ret1_data = ret1.toFloat()*3/800+0.5;
+			float ret1_data = ret1.toFloat()*3/800;
 			emit this->SendPX(ret1_data);					//更新左侧栏圆盘
 
 			if(portDia_status)
@@ -271,18 +275,20 @@ void portDialog::receive_response(const QString &s)
 			else
 				if(ret2 == "0")
 				{
-					if(PX_data == ret1_data)
+					int ret1_int = ret1_data + 0.5;
+					if(PX_data == ret1_int)
 						emit this->Position_success();		//电机到达预定位置
 					else
 						emit this->Position_Error();		//位置错误
 				}
+			handle_PX = false;								//PX;MS;命令处理完毕
 		}
 		else
 			if(s.left(2) == "MO")
 			{			
 				if(s.left(4) == "MO=1")						//MO=1,打开电机后，设置速度SP
 					SetSP(retSP);
-				if(s.left(4) == "MO=0")						//MO=0,设置当前位置后，更新对话框中的按钮
+				if((s.left(4) == "MO=0")&&portDia_status)	//MO=0,设置当前位置后，更新对话框中的按钮
 					update_status();
 			}
 }
