@@ -87,11 +87,8 @@ void PlotWindow::enableZoomMode(bool on)							//设置放大、平移功能
 	d_zoomer->zoom(0);
 }
 
-void PlotWindow::setMaxX(int xnum)
+void PlotWindow::setMaxX(int xnum,int s_freq,bool count_num)
 {
-	qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum);					//设置x轴范围，采样点数乘以每组脉冲数
-	qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);					//y轴自动缩放
-
 	if(xValues != NULL || yValues != NULL)							//x,y清零
 	{
 		delete [] xValues;
@@ -102,11 +99,23 @@ void PlotWindow::setMaxX(int xnum)
 	xValues = new double[xnum];										//x,y所需的点数
 	yValues = new double[xnum];
 
-	for(int i = 0; i<xnum; i++)										//x,y进行初始赋值，x，y=i，设定为斜线
-		xValues[i] = i;
+	if(count_num)
+	{
+		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum);				//设置x轴范围
+		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("单位：点数"));
+		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
+			xValues[i] = i;											//横坐标为计数序号
+	}
+	else
+	{
+		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum*150/s_freq);	//设置x轴范围
+		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("单位：距离m"));
+		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
+			xValues[i] = (float)(i)*150/s_freq;						//横坐标x转换成长度单位
+	}
+	qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);					//y轴自动缩放
 	for(int i = 0; i<xnum; i++)
 		yValues[i] = 0;
-
 	qwtPlotCurve->setSamples(xValues,yValues,xnum);
 	d_zoomer->setZoomBase(true);									//原始坐标轴基础范围设置
 	qwtPlot->replot();
@@ -119,8 +128,6 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 	if(d_zoomer->zoomRectIndex() == 0)
 	{
 		qwtPlotCurve->setSamples(xValues,yValues,snum);
-//		qwtPlot->setAxisAutoScale(qwtPlot->xBottom,true);
-//		qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);
 		d_zoomer->setZoomBase(true);
 		qwtPlot->replot();
 	}
@@ -129,6 +136,20 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 void PlotWindow::set_titleName(QString ch_name)						//设置各通道名
 {
 		qwtPlot->setTitle(ch_name);
+}
+
+void PlotWindow::set_grid(bool hidegrid)
+{
+	if(hidegrid)
+	{
+		grid->enableX(false);
+		grid->enableY(false);
+	}
+	else
+	{
+		grid->enableX(true);
+		grid->enableY(true);
+	}
 }
 
 void PlotWindow::keyPressEvent(QKeyEvent *)                         //处理在键盘按键事件

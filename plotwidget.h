@@ -21,9 +21,10 @@ public:
 	void show(void);										//网格固定、最小尺寸
 
 	void enableZoomMode(bool);								//缩放模式启用
-	void setMaxX(int xnum);									//x轴参数选择，y轴自动缩放，原始坐标轴值范围设置
+	void setMaxX(int xnum,int s_freq,bool count_num);		//x轴参数选择，y轴自动缩放，原始坐标轴值范围设置
     void datashow(const qint16 *dats,uint snum,uint pnum);  //单通道更新数据显示
 	void set_titleName(QString ch_name);					//通道名设置
+	void set_grid(bool hidegrid);							//不显示网格
 
 protected:
     void timerEvent(QTimerEvent *);

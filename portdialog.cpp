@@ -29,8 +29,8 @@ portDialog::~portDialog()
 
 bool portDialog::get_returnMotor_connect()					//返回连接电机bool值给主程序
 {
-	MotorConnect = ui->checkBox_motor_connected->isChecked();
-	return MotorConnect;
+	Set_MotorConnect = ui->checkBox_motor_connected->isChecked();
+	return Set_MotorConnect;
 }
 
 void portDialog::search_set_port(int Sp)
@@ -76,15 +76,24 @@ void portDialog::search_set_port(int Sp)
 	my_serial.close();
 
 	if(portname.left(3) == "COM")
+	{
+		Motor_Connected = true;								//电机连接
 		OpenMotor();										//打开电机
+	}
 	else
+	{
 		qDebug() << "SerialPort error.";
+		Motor_Connected = false;							//电机未连接
+		ui->pushButton_auto_searchPort->setEnabled(true);	//未检测到串口，按钮设为使能状态
+	}
+	qDebug() << "motor connect status";
+	emit this->Motot_connect_status(Motor_Connected);		//主界面状态栏显示电机连接状态
 }
 
-void portDialog::initial_data( bool c, quint32 d,bool e)		//初始数据
+void portDialog::initial_data( bool c, quint16 d,bool e)	//初始数据
 {
-	MotorConnect = c;										//连接电机的bool值
-	collectNum = d;											//采集的组数
+	Set_MotorConnect = c;									//连接电机的bool值
+	StepAngle = d;											//步进角
 	Not_collect = e;										//正在采集的bool值
 	portDia_status = false;
 
@@ -95,7 +104,7 @@ void portDialog::initial_data( bool c, quint32 d,bool e)		//初始数据
 	ui->radioButton_CW->setChecked(true);					//顺时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
-	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
+	ui->checkBox_motor_connected->setChecked(Set_MotorConnect);	//连接电机
 
 	if(Not_collect  == false)								//若正在采集，界面除取消键，其他均为非使能状态
 	{
@@ -107,7 +116,7 @@ void portDialog::initial_data( bool c, quint32 d,bool e)		//初始数据
 		ui->pushButton_default->setEnabled(false);			//默认键
 		ui->pushButton_sure->setEnabled(false);				//确定键
 	}
-	if(collectNum == 1)										//单方向采集，box为使能状态
+	if(StepAngle == 0)										//单方向采集，box为使能状态
 		ui->groupBox_motor->setEnabled(true);
 	else
 		ui->groupBox_motor->setEnabled(false);
@@ -131,9 +140,9 @@ void portDialog::on_pushButton_default_clicked()			//默认键
 	ui->radioButton_CCW->setChecked(true);					//逆时针
 	ui->lineEdit_PR->setText("0");							//移动距离
 	ui->lineEdit_PA->setText("0");							//绝对距离
-	ui->checkBox_motor_connected->setChecked(MotorConnect);	//连接电机
+	ui->checkBox_motor_connected->setChecked(Set_MotorConnect);	//连接电机
 
-	if(collectNum == 1)										//单方向采集，box为使能状态
+	if(StepAngle == 0)										//单方向采集，box为使能状态
 		ui->groupBox_motor->setEnabled(true);
 	else
 		ui->groupBox_motor->setEnabled(false);
@@ -156,9 +165,13 @@ void portDialog::on_pushButton_auto_searchPort_clicked()	//自动检测键
 
 void portDialog::on_pushButton_relative_clicked()			//相对转动键
 {
+	ui->pushButton_auto_searchPort->setEnabled(false);
 	ui->pushButton_relative->setEnabled(false);
 	ui->pushButton_absolute->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
+	ui->pushButton_default->setEnabled(false);
+	ui->pushButton_sure->setEnabled(false);
+	ui->pushButton_cancel->setEnabled(false);
 	portDia_status = true;
 	if(ui->radioButton_CW->isChecked())
 		CW_Rotate(ui->lineEdit_PR->text().toInt());
@@ -168,18 +181,26 @@ void portDialog::on_pushButton_relative_clicked()			//相对转动键
 
 void portDialog::on_pushButton_absolute_clicked()			//绝对转动键
 {
-	ui->pushButton_absolute->setEnabled(false);
+	ui->pushButton_auto_searchPort->setEnabled(false);
 	ui->pushButton_relative->setEnabled(false);
+	ui->pushButton_absolute->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
+	ui->pushButton_default->setEnabled(false);
+	ui->pushButton_sure->setEnabled(false);
+	ui->pushButton_cancel->setEnabled(false);
 	portDia_status = true;
 	ABS_Rotate(ui->lineEdit_PA->text().toInt());
 }
 
 void portDialog::on_pushButton_setPXis0_clicked()			//设置当前位置为0键
 {
-	ui->pushButton_setPXis0->setEnabled(false);
+	ui->pushButton_auto_searchPort->setEnabled(false);
+	ui->pushButton_relative->setEnabled(false);
 	ui->pushButton_absolute->setEnabled(false);
 	ui->pushButton_setPXis0->setEnabled(false);
+	ui->pushButton_default->setEnabled(false);
+	ui->pushButton_sure->setEnabled(false);
+	ui->pushButton_cancel->setEnabled(false);
 	portDia_status = true;
 	SetPX(ui->lineEdit_PX->text().toInt());
 }
@@ -192,9 +213,12 @@ void portDialog::show_PX(float px_show)
 void portDialog::update_status()
 {
 	ui->pushButton_auto_searchPort->setEnabled(true);
-	ui->pushButton_absolute->setEnabled(true);
 	ui->pushButton_relative->setEnabled(true);
+	ui->pushButton_absolute->setEnabled(true);
 	ui->pushButton_setPXis0->setEnabled(true);
+	ui->pushButton_default->setEnabled(true);
+	ui->pushButton_sure->setEnabled(true);
+	ui->pushButton_cancel->setEnabled(true);
 	portDia_status = false;
 }
 
@@ -252,7 +276,7 @@ void portDialog::receive_response(const QString &s)
 {
 	QString res = s;
 	if((s.left(2) == "PA")||(s.left(2) == "PR"))
-		timer1->start(80);									//打开定时器timer1
+		timer1->start(60);									//打开定时器timer1
 	else
 		if(s.left(2) == "PX")								//获取当前位置值
 		{
@@ -296,6 +320,8 @@ void portDialog::receive_response(const QString &s)
 void portDialog::portError_OR_timeout()						//串口未能打开或连接超时
 {
 	timer1->stop();											//关闭定时器
+	Motor_Connected = false;								//电机未连接
+	emit this->Motot_connect_status(Motor_Connected);		//主界面状态栏显示电机未能正确连接
 	if(portDia_status)
 		update_status();									//更新对话框按钮
 }

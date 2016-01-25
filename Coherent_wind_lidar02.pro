@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     threadstore.cpp \
     settingfile.cpp \
     portdialog.cpp \
-    serialportthread.cpp
+    serialportthread.cpp \
+    plotdialog.cpp
 
 HEADERS  += mainwindow.h \
     paradialog.h \
@@ -31,12 +32,14 @@ HEADERS  += mainwindow.h \
     threadstore.h \
     settingfile.h \
     portdialog.h \
-    serialportthread.h
+    serialportthread.h \
+    plotdialog.h
 
 FORMS    += mainwindow.ui \
     paradialog.ui \
     informationleft.ui \
-    portdialog.ui
+    portdialog.ui \
+    plotdialog.ui
 
 win32: LIBS += -LD:/QtProjectFiles/Coherent_wind_lidar02/ -lADQAPI
 

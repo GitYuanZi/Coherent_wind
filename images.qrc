@@ -9,5 +9,6 @@
         <file>images/update.png</file>
         <file>images/Convert.ico</file>
         <file>images/port.png</file>
+        <file>images/plotView.png</file>
     </qresource>
 </RCC>

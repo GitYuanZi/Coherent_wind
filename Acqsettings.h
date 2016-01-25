@@ -5,38 +5,50 @@
 typedef struct
 {
     //激光参数
-    quint16 laserRPF;
-    quint16 laserPulseWidth;
-    quint16 laserWaveLength;
-    quint16 AOM_Freq;
+	quint16 laserRPF;			//激光频率
+	quint16 laserPulseWidth;	//脉冲宽度
+	quint16 laserWaveLength;	//激光波长
+	quint16 AOM_Freq;			//AOM移频量
 
     //扫描参数
-	quint16 SP;				//驱动器速度
-	quint16 elevationAngle;
-    quint16 start_azAngle;
-    quint16 step_azAngle;
-	quint32 angleNum;
-    float circleNum;
-    bool anglekey;
-    bool circlekey;
+	quint16 elevationAngle;		//俯仰角
+	quint16 start_azAngle;		//起始角
+	quint16 step_azAngle;		//步进角
+	quint32 angleNum;			//方向数
+	float circleNum;			//圆周数
+	bool anglekey;				//方向键
+	bool circlekey;				//圆周键
+	quint16 SP;					//驱动器速度
 
     //采样参数
-    bool singleCh;
-    bool doubleCh;
-	qint16 triggleLevel;
-	qint16 triggerHoldOffSamples;
-    quint16 sampleFreq;
-    quint32 sampleNum;
-    float detRange;
-    quint16 plsAccNum;
+	bool singleCh;				//单通道
+	bool doubleCh;				//双通道
+	int trigger_mode;			//触发方式
+	qint16 trigLevel;			//触发电平
+	qint16 trigHoldOffSamples;	//触发延迟
+	float time_direct_interval;	//方向间间隔
+	float time_circle_interval;	//圆周间间隔
+	quint16 sampleFreq;			//采样频率
+	float detRange;				//采样距离
+	quint32 sampleNum;			//采样点数
+	quint16 plsAccNum;			//单次脉冲数
 
 	//文件存储
-    QString DatafilePath;
-    bool autocreate_datafile;
-	bool channel_A;
-	bool channel_B;
-    QString dataFileName_Prefix;
-	QString dataFileName_Suffix;
+	QString DatafilePath;		//数据存储路径
+	bool autocreate_datafile;	//自动创建日期文件夹
+	bool channel_A;				//通道A存储
+	bool channel_B;				//通道B存储
+	QString dataFileName_Prefix;//数据文件前缀
+	QString dataFileName_Suffix;//数据文件后缀
 }ACQSETTING;
+
+typedef struct
+{
+	bool hide_grid;				//隐藏网格
+	bool showA;					//通道A显示
+	bool showB;					//通道B显示
+	bool countNum;				//计数序号
+	bool echoDistance;			//回波距离
+}PLOTPARA;
 
 #endif // ACQSETTINGS_H

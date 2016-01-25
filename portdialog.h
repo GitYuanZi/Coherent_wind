@@ -17,7 +17,7 @@ public:
 	explicit portDialog(QWidget *parent = 0);
 	~portDialog();
 
-	void initial_data(bool c,quint32 d,bool e);//默认的设置参数
+	void initial_data(bool c,quint16 d,bool e);//默认的设置参数
 	void search_set_port(int Sp);
 	bool get_returnMotor_connect();			//返回连接电机的bool值给主程序
 	void show_PX(float px_show);			//显示当前位置
@@ -35,6 +35,7 @@ signals:
 	void SendPX(float a);					//PX值发送给主程序
 	void Position_success();				//电机到达预定位置
 	void Position_Error();					//电机未达到预定位置
+	void Motot_connect_status(bool motorConnect);	//电机连接状态
 
 
 private slots:
@@ -56,10 +57,11 @@ private:
 	QString portname;			//串口名
 	SerialPortThread thread_port;
 	int retSP;					//电机的SP值
-	bool MotorConnect;			//是否连接电机
-	quint32 collectNum;			//采集的组数
+	bool Set_MotorConnect;		//是否需要连接电机
+	quint16 StepAngle;			//采集的组数
 	bool Not_collect;			//是否正在采集
 	int PX_data;				//PX的int类型
+	bool Motor_Connected;		//电机实际连接状态
 
 
 	QString Order_str;			//待发送给电机的字符串命令
