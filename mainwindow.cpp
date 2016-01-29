@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	adq_cu = CreateADQControlUnit();
 	conncetdevice();													//连接采集卡设备
 	timer2 = new QTimer(this);											//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
-	timer2->setSingleShot(true);
+//	timer2->setSingleShot(true);
 	connect(timer2,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
 
 	PortDialog = new portDialog(this);									//电机设置对话框
@@ -344,6 +344,7 @@ void MainWindow::on_action_start_triggered()
 		Create_DataFolder();						//创建数据存储文件夹
 		numbercollect = 0;
 		stopped = false;							//stopped设置为false
+		notrig_signal = false;
 		if((mysetting.step_azAngle == 0)&&(connect_Motor == false))	//径向不连电机采集
 		{
 			reach_position = true;
@@ -421,6 +422,8 @@ void MainWindow::judge_collect_condition()
 		{
 			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 			adq_collect();
+			if(notrig_signal)
+				return;
 			qDebug() << "success_configure = " << success_configure;
 			if(success_configure == true)			//采集卡设置成功
 			{
@@ -573,7 +576,10 @@ void MainWindow::adq_collect()
 		QCoreApplication::processEvents();
 		trigged = ADQ212_GetTriggedAll(adq_cu,1);					//Trigger unit
 		if(timer2->remainingTime() == 0)
+		{
+			notrig_signal = true;
 			return;
+		}
 	}while(trigged == 0);
 	timer2->stop();
 	qDebug() << "Device trigged.";
@@ -788,7 +794,10 @@ void MainWindow::update_collet_number()
 //采集卡未检测到外部触发信号
 void MainWindow::notrig_over()
 {
+	timer_judge->stop();
+	timer2->stop();
 	collect_reset();
+	onecollect_over = true;
 	collect_state->setText(QString::fromLocal8Bit("采集停止"));
 	QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
 }

@@ -76,6 +76,7 @@ private:
 	bool stopped;									//停止采集
 	bool success_configure;							//采集卡配置成功
 	bool thread_enough;								//存储线程足够
+	bool notrig_signal;								//无外部触发信号
 
 	//USB采集卡
 	void *adq_cu;
