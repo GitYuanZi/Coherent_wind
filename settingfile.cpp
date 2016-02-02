@@ -40,12 +40,12 @@ void settingFile::writeTo_file(const ACQSETTING &setting,const QString &a )
 	settings.endGroup();
 
 	settings.beginGroup("Sample_parameters");
-	settings.setValue("singleCh",fsetting.singleCh);					//单通道
-	settings.setValue("doubleCh",fsetting.doubleCh);					//双通道
+	settings.setValue("singleCh",fsetting.isSingleCh);					//单通道
+//	settings.setValue("doubleCh",fsetting.doubleCh);					//双通道
 	settings.setValue("trigger_mode",fsetting.trigger_mode);			//触发方式
 	settings.setValue("trigLevel",fsetting.trigLevel);					//触发电平
 	settings.setValue("trigHoldOffSamples",fsetting.trigHoldOffSamples);//触发延迟
-	settings.setValue("time_direct_interval",fsetting.time_direct_interval);//方向间间隔
+	settings.setValue("time_direct_interval",fsetting.direction_intervalTime);//方向间间隔
 	settings.setValue("time_circle_interval",fsetting.time_circle_interval);//圆周间间隔
 	settings.setValue("sampleFreq",fsetting.sampleFreq);				//采样频率
 	settings.setValue("detRange",fsetting.detRange);					//探测距离
@@ -86,12 +86,12 @@ void settingFile::readFrom_file(const QString &b)
 	settings.endGroup();
 
 	settings.beginGroup("Sample_parameters");
-	fsetting.singleCh = settings.value("singleCh").toBool();				//单通道
-	fsetting.doubleCh = settings.value("doubleCh").toBool();				//双通道
+	fsetting.isSingleCh = settings.value("singleCh").toBool();				//单通道
+//	fsetting.doubleCh = settings.value("doubleCh").toBool();				//双通道
 	fsetting.trigger_mode = settings.value("trigger_mode").toInt();			//触发方式
 	fsetting.trigLevel = settings.value("trigLevel").toInt();				//触发电平
 	fsetting.trigHoldOffSamples = settings.value("trigHoldOffSamples").toInt();//触发延迟
-	fsetting.time_direct_interval = settings.value("time_direct_interval").toFloat();//方向间间隔
+	fsetting.direction_intervalTime = settings.value("time_direct_interval").toFloat();//方向间间隔
 	fsetting.time_circle_interval = settings.value("time_circle_interval").toFloat();//圆周间间隔
 	fsetting.sampleFreq = settings.value("sampleFreq").toInt();				//采样频率
 	fsetting.detRange = settings.value("detRange").toFloat();				//探测距离
@@ -203,17 +203,17 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 	if(fsetting.SP != dlgsetting.SP)								//电机速度
 		return true;
 
-	if(fsetting.singleCh != dlgsetting.singleCh)					//单通道
+	if(fsetting.isSingleCh != dlgsetting.isSingleCh)					//单通道or双通道
 		return true;
-	if(fsetting.doubleCh != dlgsetting.doubleCh)					//双通道
-		return true;
+//	if(fsetting.doubleCh != dlgsetting.doubleCh)					//双通道
+//		return true;
 	if(fsetting.trigger_mode != dlgsetting.trigger_mode)
 		return true;
 	if(fsetting.trigLevel != dlgsetting.trigLevel)					//触发电平
 		return true;
 	if(fsetting.trigHoldOffSamples != dlgsetting.trigHoldOffSamples)//触发延迟
 		return true;
-	if(fsetting.time_direct_interval != dlgsetting.time_direct_interval)
+	if(fsetting.direction_intervalTime != dlgsetting.direction_intervalTime)
 		return true;
 	if(fsetting.time_circle_interval != dlgsetting.time_circle_interval)
 		return true;

@@ -19,6 +19,11 @@
 #include <QCloseEvent>
 #include <QLabel>
 
+const int TRIGGER_WAIT_TIME = 4000;		//触发等待超时设定（ms）
+const int PERIOD_OF_JUDGE = 100;		//检测采集条件是否满足的周期（ms）
+const int FREQUENCY_OF_JUDGE = 1000/PERIOD_OF_JUDGE;			//检测采集条件是否满足的频率（Hz）
+const int FREQUENCY_OF_JUDGE_PERMIN = 60*FREQUENCY_OF_JUDGE;		//检测采集条件是否满足的频率（每分钟）
+
 namespace Ui {
 class MainWindow;
 }
@@ -49,7 +54,7 @@ private slots:
 	void collect_reset();							//采集结束后停止时，关闭multi-record
 	void collect_over();							//采集结束
 
-	void time_count();								//用于计数
+	void timer_count();								//用于计数
 	void judge_collect_condition();					//用于判断是否进行采集
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void Motor_Position(float a);					//获取当前位置，更新圆盘Dial
@@ -71,8 +76,8 @@ private:
 	plotDialog *PlotDialog;							//绘图设置对话框
 
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
-	bool connect_Motor;								//单方向采集连接电机
-	bool reach_position;							//电机达到待采集方位
+	bool using_motor;								//单方向采集连接电机
+	bool isPosition_reached;							//电机达到待采集方位
 	bool stopped;									//停止采集
 	bool success_configure;							//采集卡配置成功
 	bool thread_enough;								//存储线程足够
@@ -80,7 +85,7 @@ private:
 
 	//USB采集卡
 	void *adq_cu;
-	void conncetdevice(void);						//连接USB采集卡设备
+	void conncetADQDevice(void);						//连接USB采集卡设备
 
 	//左侧栏
     informationleft *dockleft_dlg;
@@ -110,25 +115,25 @@ private:
 	QLabel *storenum;			//用于显示存储线程状态
 	void Create_statusbar();
 
-	QTimer *timer2;				//判断定时器
+	QTimer *timer_trigger_waiting;				//判断定时器
 	QTimer *timer_judge;		//扫描采集时判断是否满足采集条件
 	void adq_para_set();		//采集卡参数设置
-	void adq_collect();			//采集卡数据采集
+	bool adq_collect();			//采集卡数据采集
 	void single_upload_store();	//单通道数据上传和存储
 	void double_upload_store();	//双通道数据上传和存储
-	void update_collet_number();//数据上传存储完成后，更新采集信息
+	void update_collect_number();//数据上传存储完成后，更新采集信息
 
 	//采集中需要设定的其他参数
-	quint32 numbercollect;		//采集方向组数
+	quint32 num_collect;		//采集方向组数
 	QString timestr;			//采集时间
 	int direction_angle;		//方位角
 	unsigned int number_of_records;		//脉冲数
 	unsigned int samples_per_record;	//采样点
 	unsigned int n_sample_skip;			//采样间隔
-	uint direct_interval_JudgeNum;		//方向间需要判断次数
-	uint circle_interval_JudgeNum;		//圆周间需要判断次数
-	uint dI_Num_Judged;					//已判断的方向间隔次数
-	uint cI_Num_Judged;					//已判断的圆周间隔次数
+	uint direction_intervalNum;			//方向间需要判断次数
+	uint circle_intervalNum;			//圆周间需要判断次数
+	uint dI_timer_counter;				//已判断的方向间隔次数
+	uint cI_timer_counter;				//已判断的圆周间隔次数
 	int PX_lastData;					//采集结束或停止时的电机位置
 	void Create_DataFolder();			//数据存储文件夹的创建
 

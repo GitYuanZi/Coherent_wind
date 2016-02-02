@@ -1,4 +1,4 @@
-#include "plotdialog.h"
+﻿#include "plotdialog.h"
 #include "ui_plotdialog.h"
 #include <QDebug>
 
@@ -15,12 +15,12 @@ plotDialog::~plotDialog()
 }
 
 //对话框显示
-void plotDialog::dialog_show(const PLOTPARA &setting,bool ch)
+void plotDialog::dialog_show(const PLOTPARA &setting, bool is_1Ch)
 {
 	p_paraValue = setting;
-	p_ch = ch;
+	p_ch = !is_1Ch;
 	ui->checkBox_hide_grid->setChecked(p_paraValue.hide_grid);
-	if(p_ch)										//双通道
+	if(!is_1Ch)										//双通道
 	{
 		ui->checkBox_showA->setEnabled(true);
 		ui->checkBox_showB->setEnabled(true);
@@ -45,7 +45,7 @@ void plotDialog::dialog_show(const PLOTPARA &setting,bool ch)
 	connect(ui->radioButton_echoDistance,&QRadioButton::clicked,this,&plotDialog::set_echoDistance);
 }
 
-PLOTPARA plotDialog::ret_settings()
+PLOTPARA plotDialog::get_settings()
 {
 	return p_paraValue;
 }

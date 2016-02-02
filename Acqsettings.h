@@ -1,4 +1,4 @@
-#ifndef ACQSETTINGS_H
+﻿#ifndef ACQSETTINGS_H
 #define ACQSETTINGS_H
 
 #include <QString>
@@ -21,12 +21,12 @@ typedef struct
 	quint16 SP;					//驱动器速度
 
     //采样参数
-	bool singleCh;				//单通道
-	bool doubleCh;				//双通道
+	bool isSingleCh;			//是否单通道
+//	bool doubleCh;				//双通道
 	int trigger_mode;			//触发方式
 	qint16 trigLevel;			//触发电平
 	qint16 trigHoldOffSamples;	//触发延迟
-	float time_direct_interval;	//方向间间隔
+	float direction_intervalTime;	//方向间间隔
 	float time_circle_interval;	//圆周间间隔
 	quint16 sampleFreq;			//采样频率
 	float detRange;				//采样距离

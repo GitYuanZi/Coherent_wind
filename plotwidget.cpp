@@ -32,10 +32,10 @@ public:
 PlotWindow::PlotWindow(MainWindow *parent):QDialog(parent)
 {
 	qwtPlot = new QwtPlot(this);
-																	//设置坐标轴
+	//设置坐标轴
 	qwtPlot->setAxisScale(qwtPlot->xBottom,0,1000);					//x轴值的初始范围0到1000
 	qwtPlot->setAxisScale(qwtPlot->yLeft,0,5);						//y轴值的初始范围0到5
-																	//加入网格
+	//加入网格
 	grid = new QwtPlotGrid;
 	grid->enableX(true);
 	grid->enableY(true);
@@ -43,19 +43,19 @@ PlotWindow::PlotWindow(MainWindow *parent):QDialog(parent)
 	grid->enableYMin(false);
 	grid->setMajorPen(QPen(Qt::black,0,Qt::DotLine));				//网格黑色
 	grid->attach(qwtPlot);
-																	//加入缩放功能
+	//加入缩放功能
 	d_zoomer = new Zoomer(QwtPlot::xBottom,QwtPlot::yLeft,
-						qwtPlot->canvas());
+						  qwtPlot->canvas());
 	d_zoomer->setRubberBand(QwtPicker::RectRubberBand);
 	d_zoomer->setRubberBandPen(QColor(Qt::blue));					//鼠标选中框为蓝色
 	d_zoomer->setTrackerMode(QwtPicker::ActiveOnly);
 	d_zoomer->setTrackerPen(QColor(Qt::blue));						//鼠标选中坐标为蓝色
-																	//加入拖移功能
+	//加入拖移功能
 	d_panner = new QwtPlotPanner(qwtPlot->canvas());
 	d_panner->setMouseButton(Qt::MidButton);						//鼠标中间滑轮用于拖移
 
-//	//设置通道名
-//	qwtPlot->setTitle(QStringLiteral("ch")+ QString::number(i));
+	//	//设置通道名
+	//	qwtPlot->setTitle(QStringLiteral("ch")+ QString::number(i));
 
 	parentWindow = parent;
 	enableZoomMode(true);											//放大、平移功能
@@ -64,7 +64,7 @@ PlotWindow::PlotWindow(MainWindow *parent):QDialog(parent)
 	yValues = NULL;
 
 	H_trim = 20;													//正常显示时，底边宽度留白（全屏时为60）
-																	//加入曲线
+	//加入曲线
 	qwtPlotCurve = new QwtPlotCurve;
 	qwtPlotCurve->setStyle(QwtPlotCurve::Steps);
 	qwtPlotCurve->setRenderHint(QwtPlotCurve::RenderAntialiased);
@@ -76,7 +76,7 @@ void PlotWindow::show()
 	const int W_trim = 20;											//右侧宽度留白20
 	qwtPlot->setFixedSize(width()-W_trim,height()-H_trim);			//固定尺寸
 	QWidget::show();
-//	qwtPlot->setMinimumSize(width()-W_trim,height()-H_trim);		//绘图部分最小尺寸
+	//	qwtPlot->setMinimumSize(width()-W_trim,height()-H_trim);		//绘图部分最小尺寸
 }
 
 void PlotWindow::enableZoomMode(bool on)							//设置放大、平移功能
@@ -99,17 +99,27 @@ void PlotWindow::setMaxX(int xnum,int s_freq,bool count_num)
 	xValues = new double[xnum];										//x,y所需的点数
 	yValues = new double[xnum];
 
+	QFont axistitlefont;
+	axistitlefont.setFamily("Microsoft YaHei UI");
+	axistitlefont.setPixelSize(16);
+	axistitlefont.setBold(false);
+	QwtText axistitle1(QString::fromLocal8Bit("采样序列"));
+	QwtText axistitle2(QString::fromLocal8Bit("距离（m）"));
+	axistitle1.setFont(axistitlefont);
+	axistitle2.setFont(axistitlefont);
 	if(count_num)
 	{
 		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum);				//设置x轴范围
-		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("单位：点数"));
+		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle1);
+//		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("采样点"));
 		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
 			xValues[i] = i;											//横坐标为计数序号
 	}
 	else
 	{
 		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum*150/s_freq);	//设置x轴范围
-		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("单位：距离m"));
+		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle2);
+//		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("距离（m）"));
 		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
 			xValues[i] = (float)(i)*150/s_freq;						//横坐标x转换成长度单位
 	}
@@ -135,7 +145,13 @@ void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数�
 
 void PlotWindow::set_titleName(QString ch_name)						//设置各通道名
 {
-		qwtPlot->setTitle(ch_name);
+	QwtText title(ch_name);
+	QFont titlefont;
+	titlefont.setFamily("Microsoft YaHei UI");
+	titlefont.setPixelSize(16);
+	titlefont.setBold(false);
+	title.setFont(titlefont);
+	qwtPlot->setTitle(title);
 }
 
 void PlotWindow::set_grid(bool hidegrid)

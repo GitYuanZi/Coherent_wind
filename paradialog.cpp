@@ -100,8 +100,8 @@ void paraDialog::update_show()
 	ui->lineEdit_SP->setText(QString::number(psetting.SP));
 
 	//采样配置——采集模式
-	ui->radioButton_singleCh->setChecked(psetting.singleCh);
-	ui->radioButton_doubleCh->setChecked(psetting.doubleCh);
+	ui->radioButton_singleCh->setChecked(psetting.isSingleCh);
+	ui->radioButton_doubleCh->setChecked(!psetting.isSingleCh);
 	//采样配置——触发设置
 	trig_conversion = false;
 	if(psetting.trigger_mode == 3)
@@ -119,7 +119,7 @@ void paraDialog::update_show()
 		ui->pushButton_conversion->setText(QString::fromLocal8Bit("点"));
 	}
 	//采样配置——定时设置
-	ui->lineEdit_direct_interval->setText(QString::number(psetting.time_direct_interval,'f',2));
+	ui->lineEdit_direct_interval->setText(QString::number(psetting.direction_intervalTime,'f',2));
 	ui->lineEdit_circle_interval->setText(QString::number(psetting.time_circle_interval,'f',2));
 	//采样配置——采样参数
 	ui->comboBox_sampleFreq->setCurrentText(QString::number(psetting.sampleFreq));
@@ -130,7 +130,7 @@ void paraDialog::update_show()
 	//文件存储
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
-	if(psetting.singleCh)
+	if(psetting.isSingleCh)
 	{
 		ui->checkBox_channelA->setChecked(false);
 		ui->checkBox_channelB->setChecked(false);
@@ -155,7 +155,7 @@ void paraDialog::update_show()
 	set_dect_time();
 	//下方参考信息——更新文件数据量
 	direct_size = 68+psetting.plsAccNum*psetting.sampleNum*2;								//单位B
-	if(psetting.singleCh)
+	if(psetting.isSingleCh)
 		single_filesize();
 	else
 		double_filesize();
@@ -198,9 +198,9 @@ void paraDialog::set_dect_time()
 					psetting.angleNum*psetting.sampleNum/(psetting.sampleFreq*1000000) +
 					psetting.angleNum*ui->lineEdit_sglfilesize->text().toFloat()/25;
 	if(psetting.step_azAngle == 0)
-		time_need = time_need + (psetting.angleNum-1)*psetting.time_direct_interval;
+		time_need = time_need + (psetting.angleNum-1)*psetting.direction_intervalTime;
 	else
-		time_need = time_need + (psetting.angleNum-1)*psetting.time_direct_interval
+		time_need = time_need + (psetting.angleNum-1)*psetting.direction_intervalTime
 					+ psetting.time_circle_interval*60*psetting.angleNum/(360/psetting.step_azAngle);
 	if(time_need < 1)
 		ui->lineEdit_totalTime->setText("<1s");									//在1s以下
@@ -401,8 +401,8 @@ void paraDialog::set_motorSP()														//电机转速
 
 void paraDialog::set_singleCh()														//单通道 影响触发电平，以及ch1的文件名编辑框、数据量
 {
-	psetting.singleCh = true;
-	psetting.doubleCh = false;
+	psetting.isSingleCh = true;
+//	psetting.doubleCh = false;
 	ui->checkBox_channelA->setChecked(false);
 	ui->checkBox_channelB->setChecked(false);
 	ui->checkBox_channelA->setEnabled(false);
@@ -414,8 +414,8 @@ void paraDialog::set_singleCh()														//单通道 影响触发电平，�
 
 void paraDialog::set_doubleCh()														//双通道 影响触发电平，以及chA、B文件名编辑框数据量
 {
-	psetting.singleCh = false;
-	psetting.doubleCh = true;
+	psetting.isSingleCh = false;
+//	psetting.doubleCh = true;
 	ui->checkBox_channelA->setChecked(psetting.channel_A);
 	ui->checkBox_channelB->setChecked(psetting.channel_B);
 	ui->checkBox_channelA->setEnabled(true);
@@ -485,7 +485,7 @@ void paraDialog::set_trigLevel_OR_holdOff()											//psetting获取编辑框�
 
 void paraDialog::set_time_direct_interval()
 {
-	psetting.time_direct_interval = ui->lineEdit_direct_interval->text().toFloat();
+	psetting.direction_intervalTime = ui->lineEdit_direct_interval->text().toFloat();
 	set_dect_time();
 }
 
@@ -664,7 +664,7 @@ void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
 void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找最小序号
 {
 	QString filter_str;
-	if(psetting.singleCh)															//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
+	if(psetting.isSingleCh)															//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
 		filter_str = psetting.dataFileName_Prefix + "_ch[1]_";
 	else
 		filter_str = psetting.dataFileName_Prefix + "_ch[AB]_";

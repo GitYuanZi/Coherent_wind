@@ -26,9 +26,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	ui->setupUi(this);
 
 	QDir dirs;
-	QString paths = dirs.currentPath()+"/"+"settings.ini";				//获取初始默认路径，并添加默认配置文件
-	m_setfile.test_create_file(paths);									//检查settings.ini是否存在，若不存在则创建
-	m_setfile.readFrom_file(paths);										//读取settings.ini文件
+	QString path = dirs.currentPath()+"/"+"settings.ini";				//获取初始默认路径，并添加默认配置文件
+	m_setfile.test_create_file(path);									//检查settings.ini是否存在，若不存在则创建
+	m_setfile.readFrom_file(path);										//读取settings.ini文件
 	mysetting = m_setfile.get_setting();								//mysetting获取文件中的参数
 	initial_plotValue();
 
@@ -37,10 +37,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	Create_statusbar();													//状态栏
 
 	adq_cu = CreateADQControlUnit();
-	conncetdevice();													//连接采集卡设备
-	timer2 = new QTimer(this);											//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
-//	timer2->setSingleShot(true);
-	connect(timer2,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
+	conncetADQDevice();													//连接采集卡设备
+	timer_trigger_waiting = new QTimer(this);							//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
+	//	timer2->setSingleShot(true);
+	connect(timer_trigger_waiting,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
 
 	PortDialog = new portDialog(this);									//电机设置对话框
 	connect(PortDialog,SIGNAL(Motot_connect_status(bool)),this,SLOT(Motot_status(bool)));
@@ -49,12 +49,12 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(PortDialog,SIGNAL(Position_success()),this,SLOT(Motor_Arrived()));
 	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(set_stop()));
 	timer_judge = new QTimer(this);
-	connect(timer_judge,SIGNAL(timeout()),this,SLOT(time_count()));
+	connect(timer_judge,SIGNAL(timeout()),this,SLOT(timer_count()));
 	connect(timer_judge,SIGNAL(timeout()),this,SLOT(judge_collect_condition()));
 
 	//初始状态值
-	connect_Motor = false;												//单方向探测默认不连接电机
-	reach_position = false;
+	using_motor = false;												//单方向探测默认不连接电机
+	isPosition_reached = false;
 	onecollect_over = true;
 	thread_enough = true;
 	success_configure = true;
@@ -95,7 +95,7 @@ void MainWindow::creatleftdock(void)
 	dockleft_dlg->set_groupNum(mysetting.angleNum);
 	dockleft_dlg->set_groupcnt(0);
 
-	if(mysetting.singleCh)
+	if(mysetting.isSingleCh)
 	{
 		FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
 		dockleft_dlg->set_filename1(FileName_1);
@@ -125,14 +125,14 @@ void MainWindow::creatqwtdock(void)
 		addDockWidget(Qt::RightDockWidgetArea,dockqwt_1);
 		plotWindow_1->setMaxX(mysetting.sampleNum,mysetting.sampleFreq,m_paraValue.countNum);
 		connect(dockqwt_1,&QDockWidget::topLevelChanged,this,&MainWindow::dockview_ct1);
-		if(mysetting.singleCh)
+		if(mysetting.isSingleCh)
 			plotWindow_1->set_titleName("CH1");
 		else
 			plotWindow_1->set_titleName("CHA");
 		plotWindow_1->set_grid(m_paraValue.hide_grid);
 	}
 
-	if((mysetting.doubleCh)&&m_paraValue.showB)
+	if((!mysetting.isSingleCh)&&m_paraValue.showB)
 	{
 		plot2show = true;
 		plotWindow_2 = new PlotWindow(this);				//创建plotWindow_2的图形区域
@@ -177,7 +177,7 @@ void MainWindow::Create_statusbar()
 }
 
 //查找并连接ADQ212设备
-void MainWindow::conncetdevice()
+void MainWindow::conncetADQDevice()
 {
 	int n_of_devices = ADQControlUnit_FindDevices(adq_cu);			//找到所有与电脑连接的ADQ，并创建一个指针列表，返回找到设备的总数
 	int n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);
@@ -214,7 +214,7 @@ void MainWindow::setPlotWindowVisible()						//设置绘图窗口的尺寸
 		plotWindow_1->setMaximumSize(1920,1080);			//绘图窗口的最大尺寸
 	}
 
-	if((mysetting.doubleCh)&&m_paraValue.showB)
+	if((!mysetting.isSingleCh)&&m_paraValue.showB)
 	{
 		plotWindow_2->setFixedSize(w,h);
 		plotWindow_2->setMaximumSize(1920,1080);
@@ -229,7 +229,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)			//主窗口大小改变时�
 //连接USB采集卡
 void MainWindow::on_action_searchDevice_triggered()
 {
-	conncetdevice();
+	conncetADQDevice();
 }
 
 //打开数据存储路径
@@ -261,7 +261,7 @@ void MainWindow::on_action_set_triggered()
 		dockleft_dlg->set_currentAngle(mysetting.start_azAngle);	//更新左侧栏
 		dockleft_dlg->set_groupNum(mysetting.angleNum);
 		dockleft_dlg->set_groupcnt(0);
-		if(mysetting.singleCh)
+		if(mysetting.isSingleCh)
 		{
 			FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
 			dockleft_dlg->set_filename1(FileName_1);
@@ -298,19 +298,19 @@ void MainWindow::refresh()
 //打开电机的串口控制对话框
 void MainWindow::on_action_serialport_triggered()
 {
-	PortDialog->initial_data(connect_Motor,mysetting.step_azAngle,stopped);
+	PortDialog->initial_data(using_motor,mysetting.step_azAngle,stopped);
 	if(PortDialog->exec() == QDialog::Accepted)		//从串口对话框接收连接电机bool值
-		connect_Motor = PortDialog->get_returnMotor_connect();
+		using_motor = PortDialog->get_returnMotor_connect();
 }
 
 //打开绘图设置对话框
 void MainWindow::on_action_view_triggered()
 {
 	PlotDialog = new plotDialog(this);				//绘图设置对话框
-	PlotDialog->dialog_show(m_paraValue,mysetting.doubleCh);
+	PlotDialog->dialog_show(m_paraValue,mysetting.isSingleCh);
 	if(PlotDialog->exec() == QDialog::Accepted)
 	{
-		m_paraValue = PlotDialog->ret_settings();
+		m_paraValue = PlotDialog->get_settings();
 		refresh();
 	}
 	delete PlotDialog;
@@ -327,7 +327,7 @@ void MainWindow::on_action_start_triggered()
 	if(mysetting.angleNum == 0)						//方向数为0时，不采集
 		return;
 
-	n_sample_skip = 1;								//采样间隔设为1，表示无采样间隔
+	n_sample_skip = 1;					//采样间隔设为1，表示无采样间隔
 	if(ADQ212_SetSampleSkip(adq_cu,1,n_sample_skip) == 0)
 	{
 		collect_state->setText(QString::fromLocal8Bit("采集停止"));
@@ -335,36 +335,37 @@ void MainWindow::on_action_start_triggered()
 		return;
 	}
 
-	adq_para_set();									//采集卡参数设置
-	if(success_configure == true)					//采集卡配置成功
+	adq_para_set();						//设置采集卡参数
+	if(success_configure == true)		//采集卡配置成功
 	{
-		direct_interval_JudgeNum = mysetting.time_direct_interval*10;
-		dI_Num_Judged = direct_interval_JudgeNum;
+		direction_intervalNum = mysetting.direction_intervalTime * FREQUENCY_OF_JUDGE;
+		dI_timer_counter = direction_intervalNum;		//为了第一次？
 
-		Create_DataFolder();						//创建数据存储文件夹
-		numbercollect = 0;
-		stopped = false;							//stopped设置为false
+		Create_DataFolder();			//创建数据存储文件夹
+		num_collect = 0;
+		stopped = false;				//stopped设置为false
 		notrig_signal = false;
-		if((mysetting.step_azAngle == 0)&&(connect_Motor == false))	//径向不连电机采集
+		if((mysetting.step_azAngle == 0)&&(using_motor == false))	//径向不连电机采集
 		{
-			reach_position = true;
-			timer_judge->start(100);
+			isPosition_reached = true;
+			timer_judge->start(PERIOD_OF_JUDGE);
 		}
-		else										//径向连接电机采集OR扫描连接电机采集
+		else														//连接电机采集（径向OR扫描）
 		{
 			if(mysetting.step_azAngle != 0)
 			{
-				circle_interval_JudgeNum = mysetting.time_circle_interval*600;
-				cI_Num_Judged = circle_interval_JudgeNum;
+				circle_intervalNum = mysetting.time_circle_interval*FREQUENCY_OF_JUDGE_PERMIN;
+//				cI_timer_counter = circle_intervalNum;
+				cI_timer_counter = 0;
 			}
 			collect_state->setText(QString::fromLocal8Bit("电机位置调整..."));
-			timer_judge->start(100);
+			timer_judge->start(PERIOD_OF_JUDGE);
 			PortDialog->ABS_Rotate(mysetting.start_azAngle);
 		}
 	}
 	else											//采集卡配置失败
 	{
-		success_configure = true;
+		success_configure = true;	//??
 		ADQ212_DisarmTrigger(adq_cu,1);
 		ADQ212_MultiRecordClose(adq_cu,1);
 		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("采集卡设置失败"));
@@ -387,47 +388,51 @@ void MainWindow::Create_DataFolder()
 }
 
 //方向间、圆周间间隔计数
-void MainWindow::time_count()
+void MainWindow::timer_count()
 {
-	dI_Num_Judged++;
-	cI_Num_Judged++;
+	dI_timer_counter++;
+	cI_timer_counter++;
 }
 
-//判断是否进行下一组采集
+//定时判断是否进行下一组采集
 void MainWindow::judge_collect_condition()
 {
-	if((dI_Num_Judged >= direct_interval_JudgeNum)
-			&&(reach_position == true)&&(onecollect_over == true))
+	if((dI_timer_counter >= direction_intervalNum)
+			&&(isPosition_reached == true)&&(onecollect_over == true))
 	{
-		onecollect_over = false;					//单次采集开始
-
 		//扫描探测时
 		if(mysetting.step_azAngle != 0)
 		{
-			if(cI_Num_Judged < circle_interval_JudgeNum)
+			unsigned int a = ((num_collect-1)*mysetting.step_azAngle)/360;
+			unsigned int b = (num_collect*mysetting.step_azAngle)/360;
+			if((num_collect>0)&&(a<b))		//即将跨过一个360度
 			{
-				onecollect_over = true;				//未到达圆周间间隔时间
-				return;
-			}
-			else									//达到时间时
-			{
-				reach_position = false;
-				cI_Num_Judged = 0;
+				if(cI_timer_counter < circle_intervalNum)	//未到达圆周间间隔时间
+				{
+					//				onecollect_over = true;
+					return;
+				}
+				else										//达到时间时
+				{
+					isPosition_reached = false;
+					cI_timer_counter = 0;
+				}
 			}
 		}
 
-		dI_Num_Judged = 0;							//判断次数清零
+		onecollect_over = false;						//单次采集开始
+		dI_timer_counter = 0;							//判断次数清零
 		qDebug() << "stopped = " << stopped;
 		if(stopped == false)
 		{
 			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
-			adq_collect();
+			success_configure = adq_collect();
 			if(notrig_signal)
 				return;
 			qDebug() << "success_configure = " << success_configure;
-			if(success_configure == true)			//采集卡设置成功
+			if(success_configure == true)				//采集卡设置成功
 			{
-				if(mysetting.singleCh)				//数据上传并存储
+				if(mysetting.isSingleCh)				//数据上传并存储
 					single_upload_store();
 				else
 					double_upload_store();
@@ -438,9 +443,9 @@ void MainWindow::judge_collect_condition()
 					if(thread_enough == true)
 					{
 						collect_state->setText(QString::fromLocal8Bit("数据上传成功..."));
-						update_collet_number();		//更新当前采集信息
+						update_collect_number();		//更新当前采集信息
 						//判断是否完成设置组数
-						if((numbercollect >= mysetting.angleNum)||(stopped == true))
+						if((num_collect >= mysetting.angleNum)||(stopped == true))
 							collect_over();
 						onecollect_over = true;
 					}
@@ -451,7 +456,7 @@ void MainWindow::judge_collect_condition()
 						thread_enough = true;
 						collect_reset();
 						collect_state->setText(QString::fromLocal8Bit("采集停止"));
-						QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量过大，请适当降低电机转速"));
+						QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量大，存储较慢，请适当降低电机转速"));
 					}
 				}
 				else
@@ -504,7 +509,7 @@ void MainWindow::Motot_status(bool a)
 //电机到达预采集位置
 void MainWindow::Motor_Arrived()
 {
-	reach_position = true;
+	isPosition_reached = true;
 }
 
 void MainWindow::set_stop()
@@ -548,17 +553,15 @@ void MainWindow::adq_para_set()
 }
 
 //采集卡触发进行采集、并更新左侧采集文件和方位信息
-void MainWindow::adq_collect()
+bool MainWindow::adq_collect()
 {
-	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)							//Disarm unit
-		success_configure = false;
-	if(ADQ212_ArmTrigger(adq_cu,1) == 0)							//Arm unit
-		success_configure = false;
-	if(success_configure == false)									//判断success_configure
-		return;
+	if(ADQ212_DisarmTrigger(adq_cu,1) == 0)			//Disarm unit
+		return false;
+	if(ADQ212_ArmTrigger(adq_cu,1) == 0)			//Arm unit
+		return false;
 
-	dockleft_dlg->set_groupcnt(numbercollect+1);					//进度条更新
-	if(mysetting.singleCh)											//单通道文件名更新
+	dockleft_dlg->set_groupcnt(num_collect+1);					//进度条更新
+	if(mysetting.isSingleCh)										//单通道文件名更新
 		dockleft_dlg->set_filename1(FileName_1);
 	else															//双通道文件名更新
 	{
@@ -570,25 +573,26 @@ void MainWindow::adq_collect()
 	timestr = collectTime.toString("yyyy/MM/dd hh:mm:ss");
 	qDebug() << "Please trig your device to collect data.";
 	int trigged;
-	timer2->start(4000);
+	timer_trigger_waiting->start(TRIGGER_WAIT_TIME);
 	do
 	{
 		QCoreApplication::processEvents();
 		trigged = ADQ212_GetTriggedAll(adq_cu,1);					//Trigger unit
-		if(timer2->remainingTime() == 0)
+		if(timer_trigger_waiting->remainingTime() == 0)
 		{
 			notrig_signal = true;
-			return;
+			return false;
 		}
 	}while(trigged == 0);
-	timer2->stop();
+	timer_trigger_waiting->stop();
 	qDebug() << "Device trigged.";
 
-	if((mysetting.step_azAngle != 0)&&((numbercollect+1)< mysetting.angleNum)&&(stopped == false))
+	if((mysetting.step_azAngle != 0)&&((num_collect+1)< mysetting.angleNum)&&(stopped == false))
 		PortDialog->CW_Rotate(mysetting.step_azAngle);
+	return true;
 }
 
-//单通道数据上传和存储
+//单通道数据上传、存储和显示
 void MainWindow::single_upload_store()
 {
 	qDebug() << "Collecting data,plesase wait...";
@@ -771,7 +775,7 @@ void MainWindow::double_upload_store()
 }
 
 //采集数据上传和存储完成后，更新当前采集文件、序号信息
-void MainWindow::update_collet_number()
+void MainWindow::update_collect_number()
 {
 	int filenumber = mysetting.dataFileName_Suffix.toInt();
 	int len = mysetting.dataFileName_Suffix.length();
@@ -781,21 +785,21 @@ void MainWindow::update_collet_number()
 		mysetting.dataFileName_Suffix.sprintf("%08d", filenumber);
 		mysetting.dataFileName_Suffix = mysetting.dataFileName_Suffix.right(len);
 	}
-	if(mysetting.singleCh)
+	if(mysetting.isSingleCh)
 		FileName_1 = mysetting.dataFileName_Prefix + "_ch1_" + mysetting.dataFileName_Suffix + ".wld";
 	else
 	{
 		FileName_A = mysetting.dataFileName_Prefix + "_chA_" + mysetting.dataFileName_Suffix + ".wld";
 		FileName_B = mysetting.dataFileName_Prefix + "_chB_" + mysetting.dataFileName_Suffix + ".wld";
 	}
-	numbercollect++;												//下一组采集组数
+	num_collect++;		//下一组采集组数
 }
 
 //采集卡未检测到外部触发信号
 void MainWindow::notrig_over()
 {
 	timer_judge->stop();
-	timer2->stop();
+	timer_trigger_waiting->stop();
 	collect_reset();
 	onecollect_over = true;
 	collect_state->setText(QString::fromLocal8Bit("采集停止"));

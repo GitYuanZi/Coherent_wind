@@ -1,4 +1,4 @@
-#ifndef PLOTDIALOG_H
+﻿#ifndef PLOTDIALOG_H
 #define PLOTDIALOG_H
 
 #include <QDialog>
@@ -15,8 +15,8 @@ class plotDialog : public QDialog
 public:
 	explicit plotDialog(QWidget *parent = 0);
 	~plotDialog();
-	void dialog_show(const PLOTPARA &setting,bool ch);
-	PLOTPARA ret_settings(void);
+	void dialog_show(const PLOTPARA &setting, bool is_1Ch);
+	PLOTPARA get_settings(void);
 
 private slots:
 	void set_hide_grid();

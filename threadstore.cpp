@@ -11,7 +11,7 @@ threadStore::threadStore()
 
 void threadStore::run()
 {
-	if(tsetting.singleCh)
+	if(tsetting.isSingleCh)
 		singleData();
 	else
 		doubleData();
