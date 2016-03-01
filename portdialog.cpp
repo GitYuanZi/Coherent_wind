@@ -82,11 +82,10 @@ void portDialog::search_set_port(int Sp)
 	}
 	else
 	{
-		qDebug() << "SerialPort error.";
 		Motor_Connected = false;							//电机未连接
 		ui->pushButton_auto_searchPort->setEnabled(true);	//未检测到串口，按钮设为使能状态
 	}
-	qDebug() << "motor connect status";
+
 	emit this->Motot_connect_status(Motor_Connected);		//主界面状态栏显示电机连接状态
 }
 
@@ -224,7 +223,6 @@ void portDialog::update_status()
 
 void portDialog::ABS_Rotate(int Pa)
 {
-	qDebug() << "start position";
 	PX_data = Pa;
 	Order_str = "PA="+QString::number(Pa*800/3)+";SP="+QString::number(retSP*800/3)+";BG;";
 	thread_port.transaction(portname,Order_str);
@@ -264,7 +262,6 @@ void portDialog::OpenMotor()
 
 void portDialog::DemandPX()
 {
-	qDebug() << "timer1 start";
 	if(handle_PX == false)
 	{
 		Order_str = "PX;MS;";

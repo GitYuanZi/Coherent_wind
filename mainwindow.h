@@ -117,7 +117,7 @@ private:
 
 	QTimer *timer_trigger_waiting;				//判断定时器
 	QTimer *timer_judge;		//扫描采集时判断是否满足采集条件
-	void adq_para_set();		//采集卡参数设置
+	bool adq_para_set();		//采集卡参数设置
 	bool adq_collect();			//采集卡数据采集
 	void single_upload_store();	//单通道数据上传和存储
 	void double_upload_store();	//双通道数据上传和存储
@@ -134,6 +134,7 @@ private:
 	uint circle_intervalNum;			//圆周间需要判断次数
 	uint dI_timer_counter;				//已判断的方向间隔次数
 	uint cI_timer_counter;				//已判断的圆周间隔次数
+	uint Num_perRound;					//扫描采集时的每周方向数
 	int PX_lastData;					//采集结束或停止时的电机位置
 	void Create_DataFolder();			//数据存储文件夹的创建
 

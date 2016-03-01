@@ -251,6 +251,7 @@ void MainWindow::on_action_open_triggered()
 //打开参数设置对话框
 void MainWindow::on_action_set_triggered()
 {
+	QCoreApplication::processEvents();
 	ParaSetDlg = new paraDialog(this);
 	ParaSetDlg->init_setting(mysetting,stopped);					//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
@@ -319,7 +320,7 @@ void MainWindow::on_action_view_triggered()
 //采集菜单中的开始按钮
 void MainWindow::on_action_start_triggered()
 {
-	if((num_running != 0)||(stopped == false))		//检查存储线程是否完成数据存储
+	if((num_running == 4)||(stopped == false))		//检查存储线程是否完成数据存储
 	{
 		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
 		return;
@@ -335,7 +336,7 @@ void MainWindow::on_action_start_triggered()
 		return;
 	}
 
-	adq_para_set();						//设置采集卡参数
+	success_configure = adq_para_set();	//设置采集卡参数
 	if(success_configure == true)		//采集卡配置成功
 	{
 		direction_intervalNum = mysetting.direction_intervalTime * FREQUENCY_OF_JUDGE;
@@ -355,8 +356,9 @@ void MainWindow::on_action_start_triggered()
 			if(mysetting.step_azAngle != 0)
 			{
 				circle_intervalNum = mysetting.time_circle_interval*FREQUENCY_OF_JUDGE_PERMIN;
-//				cI_timer_counter = circle_intervalNum;
-				cI_timer_counter = 0;
+				cI_timer_counter = circle_intervalNum;
+//				cI_timer_counter = 0;
+				Num_perRound = 360/mysetting.step_azAngle;
 			}
 			collect_state->setText(QString::fromLocal8Bit("电机位置调整..."));
 			timer_judge->start(PERIOD_OF_JUDGE);
@@ -397,49 +399,54 @@ void MainWindow::timer_count()
 //定时判断是否进行下一组采集
 void MainWindow::judge_collect_condition()
 {
+	QCoreApplication::processEvents();
 	if((dI_timer_counter >= direction_intervalNum)
 			&&(isPosition_reached == true)&&(onecollect_over == true))
 	{
 		//扫描探测时
 		if(mysetting.step_azAngle != 0)
 		{
-			unsigned int a = ((num_collect-1)*mysetting.step_azAngle)/360;
-			unsigned int b = (num_collect*mysetting.step_azAngle)/360;
-			if((num_collect>0)&&(a<b))		//即将跨过一个360度
+			if(num_collect%Num_perRound == 0)				//即将转过一圈
 			{
-				if(cI_timer_counter < circle_intervalNum)	//未到达圆周间间隔时间
+				if(stopped == true)
 				{
-					//				onecollect_over = true;
+					timer_judge->stop();
+					onecollect_over = true;
+					collect_reset();
+					collect_state->setText(QString::fromLocal8Bit("采集停止"));
+					QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集已停止"));
 					return;
 				}
-				else										//达到时间时
+				if(cI_timer_counter >= circle_intervalNum)	//达到圆周间隔时间
 				{
 					isPosition_reached = false;
 					cI_timer_counter = 0;
 				}
+				else
+					return;
 			}
+			else										//一圈内的采集正常进行
+				isPosition_reached = false;
 		}
 
 		onecollect_over = false;						//单次采集开始
 		dI_timer_counter = 0;							//判断次数清零
-		qDebug() << "stopped = " << stopped;
 		if(stopped == false)
 		{
 			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 			success_configure = adq_collect();
 			if(notrig_signal)
 				return;
-			qDebug() << "success_configure = " << success_configure;
+
 			if(success_configure == true)				//采集卡设置成功
 			{
 				if(mysetting.isSingleCh)				//数据上传并存储
 					single_upload_store();
 				else
 					double_upload_store();
-				qDebug() << "success_configure2 = " << success_configure;
+
 				if(success_configure == true)
 				{
-					qDebug() << "thread_enough = " << thread_enough;
 					if(thread_enough == true)
 					{
 						collect_state->setText(QString::fromLocal8Bit("数据上传成功..."));
@@ -518,38 +525,39 @@ void MainWindow::set_stop()
 }
 
 //采集卡参数设置
-void MainWindow::adq_para_set()
+bool MainWindow::adq_para_set()
 {
 	int trig_mode = mysetting.trigger_mode;
 	if(ADQ212_SetTriggerMode(adq_cu,1,trig_mode) == 0)
-		success_configure = false;
+		return false;
 	if(trig_mode == 3)							//电平触发
 	{
 		qint16 trig_level = mysetting.trigLevel;
 		if(ADQ212_SetLvlTrigLevel(adq_cu,1,trig_level) == 0)
-			success_configure = false;
+			return false;
 		int trig_flank = 1;						//触发边沿 -> 上升沿
 		if(ADQ212_SetLvlTrigFlank(adq_cu,1,trig_flank) == 0)
-			success_configure = false;
+			return false;
 		int trig_channel = 1;					//触发通道:1通道A,2通道B
 		if(ADQ212_SetLvlTrigChannel(adq_cu,1,trig_channel) == 0)
-			success_configure = false;
+			return false;
 	}
 	int clock_source = 0;						//时钟源选择0，内部时钟，内部参考
 	if(ADQ212_SetClockSource(adq_cu,1,clock_source) == 0)
-		success_configure = false;
+		return false;
 	int pll_divider = int(1100/mysetting.sampleFreq);
 	if(ADQ212_SetPllFreqDivider(adq_cu,1,pll_divider) == 0)
-		success_configure = false;
+		return false;
 	number_of_records = mysetting.plsAccNum;	//脉冲数
 	samples_per_record = mysetting.sampleNum;	//采样点数
 	if(mysetting.trigger_mode == 2)				//外部触发时，设置触发延迟
 	{
 		if(ADQ212_SetTriggerHoldOffSamples(adq_cu,1,mysetting.trigHoldOffSamples) == 0)
-			success_configure = false;
+			return false;
 	}
 	if(ADQ212_MultiRecordSetup(adq_cu,1,number_of_records,samples_per_record) == 0)
-		success_configure = false;
+		return false;
+	return true;
 }
 
 //采集卡触发进行采集、并更新左侧采集文件和方位信息

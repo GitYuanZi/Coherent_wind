@@ -38,11 +38,10 @@ void SerialPortThread::run()
 	{
 		currentPortName = portName;
 		currentPortNameChanged = true;
-		qDebug() << "currentPortName" << currentPortName;
 	}
+
 	int currentWaitTimeout = waitTimeout;
 	QString currentRequest = request;
-	qDebug() << "currentRequest = " << currentRequest;
 	mutex.unlock();
 	QSerialPort serial;
 	while(!quit)
@@ -51,10 +50,8 @@ void SerialPortThread::run()
 		{
 			serial.close();
 			serial.setPortName(currentPortName);
-			qDebug() << "serial.currentPortName" << currentPortName;
 			if(!serial.open(QIODevice::ReadWrite))
 			{
-				qDebug() << "Can't open "<< currentPortName;
 				emit this->S_PortNotOpen();						//串口未成功打开，信号返回到主程序
 				return;
 			}
@@ -65,7 +62,6 @@ void SerialPortThread::run()
 			serial.setFlowControl(QSerialPort::NoFlowControl);	//流控制
 		}
 		QByteArray requestData = currentRequest.toLocal8Bit();
-		qDebug() << "requestData = " << requestData;
 		serial.write(requestData);
 		if(serial.waitForBytesWritten(waitTimeout))
 		{
@@ -76,7 +72,6 @@ void SerialPortThread::run()
 					responseData += serial.readAll();
 				QString response(responseData);
 				emit this->response(response);
-				qDebug() << "response = " << response;
 			}
 			else
 			{
@@ -99,7 +94,7 @@ void SerialPortThread::run()
 		}
 		else
 			currentPortNameChanged = false;
-		qDebug() << "last";
+
 		currentWaitTimeout = waitTimeout;
 		currentRequest = request;
 		mutex.unlock();

@@ -167,7 +167,10 @@ void settingFile::test_create_file(const QString &c)
 	}
 	else
 	{
+		path_c.chop(13);									//截掉末尾配置文件名
+		path_c.append("/").append(prefix_str);				//路径末尾加上日期文件夹
 		settings.beginGroup("File_store");
+		settings.setValue("DatafilePath",path_c);			//文件保存路径
 		settings.setValue("dataFileNamePrefix",prefix_str);	//前缀文件名
 		settings.endGroup();
 		qDebug() <<"Settings file exist";
