@@ -251,7 +251,6 @@ void MainWindow::on_action_open_triggered()
 //打开参数设置对话框
 void MainWindow::on_action_set_triggered()
 {
-	QCoreApplication::processEvents();
 	ParaSetDlg = new paraDialog(this);
 	ParaSetDlg->init_setting(mysetting,stopped);					//mysetting传递给设置窗口psetting
 	ParaSetDlg->initial_para();										//参数显示在设置窗口上，并连接槽
@@ -399,7 +398,6 @@ void MainWindow::timer_count()
 //定时判断是否进行下一组采集
 void MainWindow::judge_collect_condition()
 {
-	QCoreApplication::processEvents();
 	if((dI_timer_counter >= direction_intervalNum)
 			&&(isPosition_reached == true)&&(onecollect_over == true))
 	{
