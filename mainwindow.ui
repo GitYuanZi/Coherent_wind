@@ -88,6 +88,9 @@
    <addaction name="menu_4"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
+   <property name="windowTitle">
+    <string>工具栏</string>
+   </property>
    <property name="iconSize">
     <size>
      <width>32</width>

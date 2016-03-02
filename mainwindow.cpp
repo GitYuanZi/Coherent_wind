@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	m_setfile.test_create_file(path);									//检查settings.ini是否存在，若不存在则创建
 	m_setfile.readFrom_file(path);										//读取settings.ini文件
 	mysetting = m_setfile.get_setting();								//mysetting获取文件中的参数
-	initial_plotValue();
+	initial_plotValue();												//初始的绘图显示参数
 
 	creatleftdock();													//左侧栏
 	creatqwtdock();														//曲线栏
@@ -89,6 +89,7 @@ void MainWindow::creatleftdock(void)
 	dockWidget = new QDockWidget;
 	dockWidget->setWidget(dockleft_dlg);
 	dockWidget->setFeatures(QDockWidget::NoDockWidgetFeatures);
+//	dockWidget->setWindowTitle(QString::fromLocal8Bit("左侧栏"));
 	addDockWidget(Qt::LeftDockWidgetArea, dockWidget);
 
 	dockleft_dlg->set_currentAngle(mysetting.start_azAngle);
@@ -126,9 +127,15 @@ void MainWindow::creatqwtdock(void)
 		plotWindow_1->setMaxX(mysetting.sampleNum,mysetting.sampleFreq,m_paraValue.countNum);
 		connect(dockqwt_1,&QDockWidget::topLevelChanged,this,&MainWindow::dockview_ct1);
 		if(mysetting.isSingleCh)
+		{
+//			dockqwt_1->setWindowTitle(QString::fromLocal8Bit("CH1"));
 			plotWindow_1->set_titleName("CH1");
+		}
 		else
+		{
+//			dockqwt_1->setWindowTitle(QString::fromLocal8Bit("CHA"));
 			plotWindow_1->set_titleName("CHA");
+		}
 		plotWindow_1->set_grid(m_paraValue.hide_grid);
 	}
 
@@ -142,6 +149,7 @@ void MainWindow::creatqwtdock(void)
 		addDockWidget(Qt::RightDockWidgetArea,dockqwt_2);
 		plotWindow_2->setMaxX(mysetting.sampleNum,mysetting.sampleFreq,m_paraValue.countNum);
 		connect(dockqwt_2,&QDockWidget::topLevelChanged,this,&MainWindow::dockview_ct2);
+//		dockqwt_2->setWindowTitle(QString::fromLocal8Bit("CHB"));
 		plotWindow_2->set_titleName("CHB");					//双通道B的名称
 		plotWindow_2->set_grid(m_paraValue.hide_grid);
 	}

@@ -578,9 +578,14 @@ void paraDialog::on_pushButton_conversion_clicked()
 	}
 }
 
+//单次最大脉冲数
 void paraDialog::on_pushButton_clicked()
 {
-	int max_plsAcc = (170*1024*1024-68)/(2*psetting.sampleNum);
+	int max_plsAcc;
+	if(psetting.trigger_mode == 2)					//外部触发
+		max_plsAcc = (170*1024*1024-68)/(psetting.sampleNum*2 + psetting.trigHoldOffSamples*2);
+	else											//电平触发
+		max_plsAcc = (170*1024*1024-68)/(2*psetting.sampleNum);
 	ui->lineEdit_plsAccNum->setText(QString::number(max_plsAcc));
 }
 
