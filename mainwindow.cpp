@@ -316,10 +316,27 @@ void MainWindow::on_action_view_triggered()
 {
 	PlotDialog = new plotDialog(this);				//绘图设置对话框
 	PlotDialog->dialog_show(m_paraValue,mysetting.isSingleCh);
+	bool defaulA = m_paraValue.showA;
+	bool defaulB = m_paraValue.showB;
 	if(PlotDialog->exec() == QDialog::Accepted)
 	{
 		m_paraValue = PlotDialog->get_settings();
-		refresh();
+		if((defaulA == m_paraValue.showA)&&(defaulB == m_paraValue.showB))
+		{
+			if(m_paraValue.showA)
+			{
+				plotWindow_1->set_grid(m_paraValue.hide_grid);
+				plotWindow_1->update_xAxis(m_paraValue.countNum);
+			}
+
+			if((!mysetting.isSingleCh)&&m_paraValue.showB)
+			{
+				plotWindow_2->set_grid(m_paraValue.hide_grid);
+				plotWindow_2->update_xAxis(m_paraValue.countNum);
+			}
+		}
+		else
+			refresh();
 	}
 	delete PlotDialog;
 }
@@ -642,7 +659,7 @@ void MainWindow::single_upload_store()
 	}
 
 	if(plot1show)
-		plotWindow_1->datashow(rd_data1,mysetting.sampleNum,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
+		plotWindow_1->datashow(rd_data1,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
 	if(!threadA.isRunning())
 	{
 		num_running++;										//线程数加1，状态栏显示线程数
@@ -734,9 +751,9 @@ void MainWindow::double_upload_store()
 	}
 
 	if(plot1show)
-		plotWindow_1->datashow(rd_dataa,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示cha最后一组脉冲
+		plotWindow_1->datashow(rd_dataa,mysetting.plsAccNum);	//绘图窗口显示cha最后一组脉冲
 	if(plot2show)
-		plotWindow_2->datashow(rd_datab,mysetting.sampleNum,mysetting.plsAccNum);	//绘图窗口显示chb最后一组脉冲
+		plotWindow_2->datashow(rd_datab,mysetting.plsAccNum);	//绘图窗口显示chb最后一组脉冲
 	if(!threadA.isRunning())
 	{
 		num_running++;

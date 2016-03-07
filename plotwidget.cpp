@@ -89,6 +89,9 @@ void PlotWindow::enableZoomMode(bool on)							//设置放大、平移功能
 
 void PlotWindow::setMaxX(int xnum,int s_freq,bool count_num)
 {
+	plot_sampleNum = xnum;											//采样点数
+	plot_sampleFreq = s_freq;										//采样频率
+
 	if(xValues != NULL || yValues != NULL)							//x,y清零
 	{
 		delete [] xValues;
@@ -96,9 +99,30 @@ void PlotWindow::setMaxX(int xnum,int s_freq,bool count_num)
 		xValues = NULL;
 		yValues = NULL;
 	}
-	xValues = new double[xnum];										//x,y所需的点数
-	yValues = new double[xnum];
+	xValues = new double[plot_sampleNum];							//x,y所需的点数
+	yValues = new double[plot_sampleNum];
 
+	for(uint i = 0; i<plot_sampleNum; i++)							//纵坐标默认数据设置0
+		yValues[i] = 0;
+	update_xAxis(count_num);										//更新横坐标显示设置
+}
+
+//绘图数据显示
+void PlotWindow::datashow(const qint16 *datas,uint pnum)
+{
+	for(uint i = 0;i < plot_sampleNum;i++)
+		yValues[i] = *(datas + (plot_sampleNum*(pnum-1)+i));
+	if(d_zoomer->zoomRectIndex() == 0)
+	{
+		qwtPlotCurve->setSamples(xValues,yValues,plot_sampleNum);
+		d_zoomer->setZoomBase(true);
+	}
+	qwtPlot->replot();
+}
+
+//更新横坐标显示设置
+void PlotWindow::update_xAxis(bool countnum)
+{
 	QFont axistitlefont;
 	axistitlefont.setFamily("Microsoft YaHei UI");
 	axistitlefont.setPixelSize(16);
@@ -107,43 +131,30 @@ void PlotWindow::setMaxX(int xnum,int s_freq,bool count_num)
 	QwtText axistitle2(QString::fromLocal8Bit("距离（m）"));
 	axistitle1.setFont(axistitlefont);
 	axistitle2.setFont(axistitlefont);
-	if(count_num)
+	if(countnum)
 	{
-		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum);				//设置x轴范围
+		qwtPlot->setAxisScale(qwtPlot->xBottom,0,plot_sampleNum);	//设置x轴范围
 		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle1);
 //		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("采样点"));
-		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
+		for(uint i = 0; i<plot_sampleNum; i++)						//x进行初始赋值
 			xValues[i] = i;											//横坐标为计数序号
 	}
 	else
 	{
-		qwtPlot->setAxisScale(qwtPlot->xBottom,0,xnum*150/s_freq);	//设置x轴范围
+		qwtPlot->setAxisScale(qwtPlot->xBottom,0,plot_sampleNum*150/plot_sampleFreq);
 		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle2);
 //		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("距离（m）"));
-		for(int i = 0; i<xnum; i++)									//x,y进行初始赋值
-			xValues[i] = (float)(i)*150/s_freq;						//横坐标x转换成长度单位
+		for(uint i = 0; i<plot_sampleNum; i++)						//x进行初始赋值
+			xValues[i] = (float)(i)*150/plot_sampleFreq;			//横坐标x转换成长度单位
 	}
 	qwtPlot->setAxisAutoScale(qwtPlot->yLeft,true);					//y轴自动缩放
-	for(int i = 0; i<xnum; i++)
-		yValues[i] = 0;
-	qwtPlotCurve->setSamples(xValues,yValues,xnum);
+	qwtPlotCurve->setSamples(xValues,yValues,plot_sampleNum);
 	d_zoomer->setZoomBase(true);									//原始坐标轴基础范围设置
 	qwtPlot->replot();
 }
 
-void PlotWindow::datashow(const qint16 *datas,uint snum,uint pnum)	//绘图数据显示
-{
-	for(uint i = 0;i < snum;i++)
-		yValues[i] = *(datas + (snum*(pnum-1)+i));
-	if(d_zoomer->zoomRectIndex() == 0)
-	{
-		qwtPlotCurve->setSamples(xValues,yValues,snum);
-		d_zoomer->setZoomBase(true);
-		qwtPlot->replot();
-	}
-}
-
-void PlotWindow::set_titleName(QString ch_name)						//设置各通道名
+//设置各通道名
+void PlotWindow::set_titleName(QString ch_name)
 {
 	QwtText title(ch_name);
 	QFont titlefont;
@@ -166,6 +177,7 @@ void PlotWindow::set_grid(bool hidegrid)
 		grid->enableX(true);
 		grid->enableY(true);
 	}
+	qwtPlot->replot();
 }
 
 void PlotWindow::keyPressEvent(QKeyEvent *)                         //处理在键盘按键事件

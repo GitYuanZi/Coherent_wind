@@ -22,9 +22,10 @@ public:
 
 	void enableZoomMode(bool);								//缩放模式启用
 	void setMaxX(int xnum,int s_freq,bool count_num);		//x轴参数选择，y轴自动缩放，原始坐标轴值范围设置
-    void datashow(const qint16 *dats,uint snum,uint pnum);  //单通道更新数据显示
+	void datashow(const qint16 *dats,uint pnum);			//单通道更新数据显示
 	void set_titleName(QString ch_name);					//通道名设置
 	void set_grid(bool hidegrid);							//不显示网格
+	void update_xAxis(bool countnum);						//更新绘图横坐标显示
 
 protected:
     void timerEvent(QTimerEvent *);
@@ -40,6 +41,8 @@ private:
     QwtPlotCurve *qwtPlotCurve;
     QwtPlotZoomer *d_zoomer;
     QwtPlotPanner *d_panner;
+	quint32 plot_sampleNum;									//采样点数
+	quint16 plot_sampleFreq;								//采样频率
 	int ch_name;											//用于设置通道名
 	int H_trim;												//曲线显示区域，高度的所见值，形成底部空白，最大化时用于避开windows任务栏
 };
