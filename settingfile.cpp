@@ -6,6 +6,9 @@
 #include <QDateTime>
 #include "Acqsettings.h"
 
+#include <QFile>
+#include <QTextStream>
+
 settingFile::settingFile()
 {
 }
@@ -175,6 +178,19 @@ void settingFile::test_create_file(const QString &c)
 		settings.endGroup();
 		qDebug() <<"Settings file exist";
 	}
+
+	LF_path = path_c;
+	LF_path.append(".log");
+	QFile LogFile(LF_path);
+	if(LogFile.exists() == false)
+	{
+		QString cteate_time = QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss");
+		cteate_time.append(QString::fromLocal8Bit("创建记录文件"));
+		LogFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);   //使用QTextStream向文件输出换行，需要使用QIODevice::Text标志
+		QTextStream record_str(&LogFile);
+		record_str << cteate_time << endl;
+		LogFile.close();
+	}
 }
 
 bool settingFile::isSettingsChanged(const ACQSETTING &setting)
@@ -248,5 +264,23 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 ACQSETTING settingFile::get_setting()
 {
 	return fsetting;
+}
+
+//对采集进行记录
+void settingFile::updatelogFile(const QString &addInstruct)
+{
+	instruct_str = addInstruct;
+	qDebug() << "instruct_str = " << instruct_str;
+	//采集文字说明
+	QFile last_LF(LF_path);
+	QString last_time = QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss");
+	last_time.append(QString::fromLocal8Bit("开始采集"));
+	last_LF.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+	QTextStream record_str(&last_LF);
+	record_str << last_time << endl;
+
+	if(instruct_str != NULL)
+		record_str << instruct_str << endl;
+	last_LF.close();
 }
 

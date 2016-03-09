@@ -62,6 +62,8 @@ private slots:
 	void Motot_status(bool a);						//状态栏显示电机连接状态
 	void set_stop();								//stopped值置为true
 
+	void on_action_collect_instruct_triggered(bool checked);
+
 protected:
 	void closeEvent(QCloseEvent *event);			//程序关闭时，检查存储线程
 
@@ -82,6 +84,7 @@ private:
 	bool success_configure;							//采集卡配置成功
 	bool thread_enough;								//存储线程足够
 	bool notrig_signal;								//无外部触发信号
+	bool need_instruct;								//本次采集记录说明
 
 	//USB采集卡
 	void *adq_cu;

@@ -17,7 +17,7 @@
 #include <QApplication>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
-
+#include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
 	QMainWindow(parent),
@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	success_configure = true;
 	stopped = true;														//初始状态，未进行数据采集
 	num_running = 0;													//运行的数据存储线程数为0
+	need_instruct = true;
 
 	connect(&threadA, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
 	connect(&threadB, SIGNAL(store_finish()),this,SLOT(receive_storefinish()));
@@ -303,6 +304,12 @@ void MainWindow::refresh()
 	creatqwtdock();
 }
 
+//采集说明
+void MainWindow::on_action_collect_instruct_triggered(bool checked)
+{
+	need_instruct = checked;
+}
+
 //打开电机的串口控制对话框
 void MainWindow::on_action_serialport_triggered()
 {
@@ -363,6 +370,20 @@ void MainWindow::on_action_start_triggered()
 	success_configure = adq_para_set();	//设置采集卡参数
 	if(success_configure == true)		//采集卡配置成功
 	{
+		//增加采集记录
+		QString text;
+		text.clear();
+		if(need_instruct)
+		{
+			bool ok;
+			text = QInputDialog::getText(this,QString::fromLocal8Bit("采集说明"),
+												 QString::fromLocal8Bit("请输入记录文字"),
+												 QLineEdit::Normal,QString::fromLocal8Bit(NULL),&ok);
+	//			if(ok&&(!text.isEmpty()))
+	//				qDebug() << "OK";
+		}
+		m_setfile.updatelogFile(text);
+
 		direction_intervalNum = mysetting.direction_intervalTime * FREQUENCY_OF_JUDGE;
 		dI_timer_counter = direction_intervalNum;		//为了第一次？
 
@@ -416,6 +437,7 @@ void MainWindow::Create_DataFolder()
 //方向间、圆周间间隔计数
 void MainWindow::timer_count()
 {
+	qDebug() << "main 1timer_count";
 	dI_timer_counter++;
 	cI_timer_counter++;
 }
@@ -423,6 +445,7 @@ void MainWindow::timer_count()
 //定时判断是否进行下一组采集
 void MainWindow::judge_collect_condition()
 {
+	qDebug() << "main 2judge_collectCondition";
 	if((dI_timer_counter >= direction_intervalNum)
 			&&(isPosition_reached == true)&&(onecollect_over == true))
 	{
@@ -458,9 +481,10 @@ void MainWindow::judge_collect_condition()
 		{
 			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 			success_configure = adq_collect();
+			qDebug() << "main 4adq_collect";
 			if(notrig_signal)
 				return;
-
+			qDebug() << "main 5trig_signal";
 			if(success_configure == true)				//采集卡设置成功
 			{
 				if(mysetting.isSingleCh)				//数据上传并存储
@@ -475,6 +499,7 @@ void MainWindow::judge_collect_condition()
 						collect_state->setText(QString::fromLocal8Bit("数据上传成功..."));
 						update_collect_number();		//更新当前采集信息
 						//判断是否完成设置组数
+						qDebug() << "main 7update_collectNum";
 						if((num_collect >= mysetting.angleNum)||(stopped == true))
 							collect_over();
 						onecollect_over = true;
@@ -602,7 +627,7 @@ bool MainWindow::adq_collect()
 
 	QDateTime collectTime = QDateTime::currentDateTime();			//采集开始时间
 	timestr = collectTime.toString("yyyy/MM/dd hh:mm:ss");
-	qDebug() << "Please trig your device to collect data.";
+	qDebug() << "main 3Please trig your device to collect data.";
 	int trigged;
 	timer_trigger_waiting->start(TRIGGER_WAIT_TIME);
 	do
@@ -616,7 +641,7 @@ bool MainWindow::adq_collect()
 		}
 	}while(trigged == 0);
 	timer_trigger_waiting->stop();
-	qDebug() << "Device trigged.";
+	qDebug() << "main 4Device trigged.";
 
 	if((mysetting.step_azAngle != 0)&&((num_collect+1)< mysetting.angleNum)&&(stopped == false))
 		PortDialog->CW_Rotate(mysetting.step_azAngle);
@@ -626,7 +651,7 @@ bool MainWindow::adq_collect()
 //单通道数据上传、存储和显示
 void MainWindow::single_upload_store()
 {
-	qDebug() << "Collecting data,plesase wait...";
+	qDebug() << "main 6Collecting data,plesase wait...";
 	int *data_1_ptr_addr0 = ADQ212_GetPtrDataChA(adq_cu,1);
 	collect_state->setText(QString::fromLocal8Bit("数据上传中..."));
 	qint16 *rd_data1 = new qint16[samples_per_record*number_of_records];
@@ -714,7 +739,7 @@ void MainWindow::double_upload_store()
 {
 	int *data_a_ptr_addr0 = ADQ212_GetPtrDataChA(adq_cu,1);
 	int *data_b_ptr_addr0 = ADQ212_GetPtrDataChB(adq_cu,1);
-	qDebug() << "Collecting data,plesase wait...";
+	qDebug() << "main 6Collecting data,plesase wait...";
 	collect_state->setText(QString::fromLocal8Bit("数据上传中..."));
 	qint16 *rd_dataa = new qint16[samples_per_record*number_of_records];
 	qint16 *rd_datab = new qint16[samples_per_record*number_of_records];
@@ -840,6 +865,7 @@ void MainWindow::notrig_over()
 //采集结束
 void MainWindow::collect_over()
 {
+	qDebug() << "main 8collect_over";
 	timer_judge->stop();
 	collect_reset();
 	collect_state->setText(QString::fromLocal8Bit("采集完成"));
@@ -849,6 +875,7 @@ void MainWindow::collect_over()
 //采集停止或结束时更新电机位置、采集卡信息
 void MainWindow::collect_reset()
 {
+	qDebug() << "main 9collect_reset";
 	if((PX_lastData>=360)&&(mysetting.step_azAngle != 0))
 	{
 		PX_lastData = PX_lastData%360;

@@ -58,6 +58,7 @@
     </property>
     <addaction name="action_set"/>
     <addaction name="action_serialport"/>
+    <addaction name="action_collect_instruct"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="font">
@@ -275,6 +276,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="action_collect_instruct">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>采集说明</string>
    </property>
   </action>
  </widget>
