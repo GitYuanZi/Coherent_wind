@@ -49,10 +49,11 @@ private slots:
 	void on_action_start_triggered();				//开始键
 	void on_action_stop_triggered();				//停止键
 	void on_action_serialport_triggered();			//串口键
+	void on_action_collect_instruct_triggered(bool checked);
 
 	void notrig_over();								//无外部触发信号
 	void collect_reset();							//采集结束后停止时，关闭multi-record
-	void collect_over();							//采集结束
+//	void collect_over();							//采集结束
 
 	void timer_count();								//用于计数
 	void judge_collect_condition();					//用于判断是否进行采集
@@ -61,8 +62,7 @@ private slots:
 	void Motor_Arrived();							//电机到达预采集方位
 	void Motot_status(bool a);						//状态栏显示电机连接状态
 	void set_stop();								//stopped值置为true
-
-	void on_action_collect_instruct_triggered(bool checked);
+	void hintInfo_handle(int controlNum);			//采集停止提示信息、处理
 
 protected:
 	void closeEvent(QCloseEvent *event);			//程序关闭时，检查存储线程

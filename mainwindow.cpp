@@ -353,24 +353,26 @@ void MainWindow::on_action_start_triggered()
 {
 	if((num_running == 4)||(stopped == false))		//检查存储线程是否完成数据存储
 	{
-		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
+		hintInfo_handle(1);
 		return;
 	}
 	if(mysetting.angleNum == 0)						//方向数为0时，不采集
+	{
+		hintInfo_handle(2);
 		return;
+	}
 
 	n_sample_skip = 1;					//采样间隔设为1，表示无采样间隔
 	if(ADQ212_SetSampleSkip(adq_cu,1,n_sample_skip) == 0)
 	{
-		collect_state->setText(QString::fromLocal8Bit("采集停止"));
-		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("采集卡连接异常"));
+		hintInfo_handle(3);
 		return;
 	}
 
 	success_configure = adq_para_set();	//设置采集卡参数
 	if(success_configure == true)		//采集卡配置成功
 	{
-		//增加采集记录
+		//增加采集记录和说明
 		QString text;
 		text.clear();
 		if(need_instruct)
@@ -391,6 +393,7 @@ void MainWindow::on_action_start_triggered()
 		num_collect = 0;
 		stopped = false;				//stopped设置为false
 		notrig_signal = false;
+		thread_enough = true;
 		if((mysetting.step_azAngle == 0)&&(using_motor == false))	//径向不连电机采集
 		{
 			isPosition_reached = true;
@@ -411,12 +414,56 @@ void MainWindow::on_action_start_triggered()
 		}
 	}
 	else											//采集卡配置失败
+		hintInfo_handle(4);
+}
+
+//采集停止的提示信息和处理
+void MainWindow::hintInfo_handle(int controlNum)
+{
+	qDebug() << "enter error_info_handle()";
+	if(controlNum >4)
 	{
-		success_configure = true;	//??
+		timer_judge->stop();
+		onecollect_over = true;
+		collect_reset();
+		collect_state->setText(QString::fromLocal8Bit("采集结束"));
+	}
+	switch (controlNum) {
+	case 1:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
+		break;
+	case 2:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集组数为0"));
+		break;
+	case 3:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡连接异常，请重新连接"));
+		break;
+	case 4:
 		ADQ212_DisarmTrigger(adq_cu,1);
 		ADQ212_MultiRecordClose(adq_cu,1);
-		QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("采集卡设置失败"));
-		return;
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡设置失败"));
+		break;
+	case 5:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集已停止"));
+		break;
+	case 6:
+		timer_trigger_waiting->stop();
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
+		break;
+	case 7:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡数据采集失败"));
+		break;
+	case 8:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡出现故障"));
+		break;
+	case 9:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量较大，存储较慢，请适当降低转速"));
+		break;
+	case 10:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集结束"));
+		break;
+	default:
+		break;
 	}
 }
 
@@ -454,15 +501,6 @@ void MainWindow::judge_collect_condition()
 		{
 			if(num_collect%Num_perRound == 0)				//即将转过一圈
 			{
-				if(stopped == true)
-				{
-					timer_judge->stop();
-					onecollect_over = true;
-					collect_reset();
-					collect_state->setText(QString::fromLocal8Bit("采集停止"));
-					QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集已停止"));
-					return;
-				}
 				if(cI_timer_counter >= circle_intervalNum)	//达到圆周间隔时间
 				{
 					isPosition_reached = false;
@@ -485,7 +523,7 @@ void MainWindow::judge_collect_condition()
 			if(notrig_signal)
 				return;
 			qDebug() << "main 5trig_signal";
-			if(success_configure == true)				//采集卡设置成功
+			if(success_configure == true)				//采集卡采集成功
 			{
 				if(mysetting.isSingleCh)				//数据上传并存储
 					single_upload_store();
@@ -501,47 +539,20 @@ void MainWindow::judge_collect_condition()
 						//判断是否完成设置组数
 						qDebug() << "main 7update_collectNum";
 						if((num_collect >= mysetting.angleNum)||(stopped == true))
-							collect_over();
+							hintInfo_handle(10);
 						onecollect_over = true;
 					}
 					else
-					{
-						timer_judge->stop();
-						onecollect_over = true;
-						thread_enough = true;
-						collect_reset();
-						collect_state->setText(QString::fromLocal8Bit("采集停止"));
-						QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量大，存储较慢，请适当降低电机转速"));
-					}
+						hintInfo_handle(9);
 				}
 				else
-				{
-					timer_judge->stop();
-					onecollect_over = true;
-					success_configure = true;
-					collect_reset();
-					collect_state->setText(QString::fromLocal8Bit("采集停止"));
-					QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡出现故障"));
-				}
+					hintInfo_handle(8);
 			}
 			else
-			{
-				timer_judge->stop();
-				onecollect_over = true;
-				success_configure = true;
-				collect_reset();
-				collect_state->setText(QString::fromLocal8Bit("采集停止"));
-				QMessageBox::warning(this,QString::fromLocal8Bit("错误"),QString::fromLocal8Bit("采集卡设置失败"));
-			}
+				hintInfo_handle(7);
 		}
 		else
-		{
-			timer_judge->stop();
-			onecollect_over = true;
-			collect_reset();
-			collect_state->setText(QString::fromLocal8Bit("采集停止"));
-			QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集已停止"));
-		}
+			hintInfo_handle(5);
 	}
 }
 
@@ -862,16 +873,6 @@ void MainWindow::notrig_over()
 	QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
 }
 
-//采集结束
-void MainWindow::collect_over()
-{
-	qDebug() << "main 8collect_over";
-	timer_judge->stop();
-	collect_reset();
-	collect_state->setText(QString::fromLocal8Bit("采集完成"));
-	QMessageBox::information(this,QString::fromLocal8Bit("信息"),QString::fromLocal8Bit("采集结束"));
-}
-
 //采集停止或结束时更新电机位置、采集卡信息
 void MainWindow::collect_reset()
 {
@@ -891,7 +892,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 {
 	if((num_running != 0)||(stopped == false))
 	{
-		QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("数据存储尚未完成"));
+		hintInfo_handle(1);
 		event->ignore();
 	}
 	else
