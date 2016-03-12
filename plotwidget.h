@@ -17,7 +17,7 @@ class PlotWindow : public QDialog
 {
     Q_OBJECT
 public:
-    PlotWindow(MainWindow *paraent);
+	PlotWindow(MainWindow *parent);
 	void show(void);										//网格固定、最小尺寸
 
 	void enableZoomMode(bool);								//缩放模式启用

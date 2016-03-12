@@ -11,6 +11,7 @@
 #include "settingfile.h"
 #include "portdialog.h"
 #include "plotdialog.h"
+#include "helpdialog.h"
 
 #include <QByteArray>
 #include <QDataStream>
@@ -42,16 +43,17 @@ private slots:
 	void dockview_ct2(bool topLevel);
 
 	//功能键
-	void on_action_searchDevice_triggered();		//搜索键
-	void on_action_open_triggered();				//打开键
-	void on_action_set_triggered();					//设置键
-	void on_action_view_triggered();
-	void on_action_start_triggered();				//开始键
-	void on_action_stop_triggered();				//停止键
-	void on_action_serialport_triggered();			//串口键
+	void on_action_searchDevice_triggered();		//搜索
+	void on_action_about_triggered();				//关于
+	void on_action_open_triggered();				//打开
+	void on_action_set_triggered();					//设置
+	void on_action_view_triggered();				//视图
+	void on_action_start_triggered();				//开始
+	void on_action_stop_triggered();				//停止
+	void on_action_serialport_triggered();			//串口
 	void on_action_collect_instruct_triggered(bool checked);
 
-	void notrig_over();								//无外部触发信号
+//	void notrig_over();								//无外部触发信号
 	void collect_reset();							//采集结束后停止时，关闭multi-record
 //	void collect_over();							//采集结束
 
@@ -76,6 +78,7 @@ private:
 	paraDialog *ParaSetDlg;							//设置对话框
 	portDialog *PortDialog;							//串口对话框
 	plotDialog *PlotDialog;							//绘图设置对话框
+	helpDialog *HelpDialog;							//关于对话框
 
 	volatile bool onecollect_over;					//用于判断单次采集是否完成
 	bool using_motor;								//单方向采集连接电机
@@ -88,7 +91,7 @@ private:
 
 	//USB采集卡
 	void *adq_cu;
-	void conncetADQDevice(void);						//连接USB采集卡设备
+	void connectADQDevice(void);						//连接USB采集卡设备
 
 	//左侧栏
     informationleft *dockleft_dlg;

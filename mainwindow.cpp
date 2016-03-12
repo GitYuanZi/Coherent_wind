@@ -37,10 +37,10 @@ MainWindow::MainWindow(QWidget *parent) :
 	Create_statusbar();													//状态栏
 
 	adq_cu = CreateADQControlUnit();
-	conncetADQDevice();													//连接采集卡设备
+	connectADQDevice();													//连接采集卡设备
 	timer_trigger_waiting = new QTimer(this);							//用于设定触发等待超时时间，在do—while循环中，如果超时还没有触发，就跳出
-	//	timer2->setSingleShot(true);
-	connect(timer_trigger_waiting,SIGNAL(timeout()),this,SLOT(notrig_over()));			//建立用于检查do-while的定时器
+	//	timer_trigger_waiting->setSingleShot(true);
+	//	connect(timer_trigger_waiting,SIGNAL(timeout()),this,SLOT(notrig_over()));
 
 	PortDialog = new portDialog(this);									//电机设置对话框
 	connect(PortDialog,SIGNAL(Motot_connect_status(bool)),this,SLOT(Motot_status(bool)));
@@ -186,7 +186,7 @@ void MainWindow::Create_statusbar()
 }
 
 //查找并连接ADQ212设备
-void MainWindow::conncetADQDevice()
+void MainWindow::connectADQDevice()
 {
 	int n_of_devices = ADQControlUnit_FindDevices(adq_cu);			//找到所有与电脑连接的ADQ，并创建一个指针列表，返回找到设备的总数
 	int n_of_failed = ADQControlUnit_GetFailedDeviceCount(adq_cu);
@@ -238,23 +238,21 @@ void MainWindow::resizeEvent(QResizeEvent *event)			//主窗口大小改变时�
 //连接USB采集卡
 void MainWindow::on_action_searchDevice_triggered()
 {
-	conncetADQDevice();
+	connectADQDevice();
 }
 
 //打开数据存储路径
 void MainWindow::on_action_open_triggered()
 {
-	if(mysetting.DatafilePath.isEmpty())					//路径为空时，打开默认路径
-	{
-		QDir default_path;
-		QString storepath = default_path.currentPath();
-		QDesktopServices::openUrl(QUrl::fromLocalFile(storepath));
-	}
-	else													//路径存在时，打开对应的指定路径
-	{
-		Create_DataFolder();
-		QDesktopServices::openUrl(QUrl::fromLocalFile(mysetting.DatafilePath));
-	}
+	Create_DataFolder();
+	QDesktopServices::openUrl(QUrl::fromLocalFile(mysetting.DatafilePath));
+}
+
+//打开关于对话框
+void MainWindow::on_action_about_triggered()
+{
+	HelpDialog = new helpDialog(this);
+	HelpDialog->exec();
 }
 
 //打开参数设置对话框
@@ -515,44 +513,43 @@ void MainWindow::judge_collect_condition()
 
 		onecollect_over = false;						//单次采集开始
 		dI_timer_counter = 0;							//判断次数清零
-		if(stopped == false)
-		{
-			collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
-			success_configure = adq_collect();
-			qDebug() << "main 4adq_collect";
-			if(notrig_signal)
-				return;
-			qDebug() << "main 5trig_signal";
-			if(success_configure == true)				//采集卡采集成功
-			{
-				if(mysetting.isSingleCh)				//数据上传并存储
-					single_upload_store();
-				else
-					double_upload_store();
 
-				if(success_configure == true)
+		collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
+		success_configure = adq_collect();
+		qDebug() << "main 4adq_collect";
+		if(notrig_signal)
+		{
+			hintInfo_handle(6);
+			return;
+		}
+		qDebug() << "main 5trig_signal";
+		if(success_configure == true)				//采集卡采集成功
+		{
+			if(mysetting.isSingleCh)				//数据上传并存储
+				single_upload_store();
+			else
+				double_upload_store();
+
+			if(success_configure == true)
+			{
+				if(thread_enough == true)
 				{
-					if(thread_enough == true)
-					{
-						collect_state->setText(QString::fromLocal8Bit("数据上传成功..."));
-						update_collect_number();		//更新当前采集信息
-						//判断是否完成设置组数
-						qDebug() << "main 7update_collectNum";
-						if((num_collect >= mysetting.angleNum)||(stopped == true))
-							hintInfo_handle(10);
-						onecollect_over = true;
-					}
-					else
-						hintInfo_handle(9);
+					collect_state->setText(QString::fromLocal8Bit("数据上传成功..."));
+					update_collect_number();		//更新当前采集信息
+					//判断是否完成设置组数
+					qDebug() << "main 7update_collectNum";
+					if((num_collect >= mysetting.angleNum)||(stopped == true))
+						hintInfo_handle(10);
+					onecollect_over = true;
 				}
 				else
-					hintInfo_handle(8);
+					hintInfo_handle(9);
 			}
 			else
-				hintInfo_handle(7);
+				hintInfo_handle(8);
 		}
 		else
-			hintInfo_handle(5);
+			hintInfo_handle(7);
 	}
 }
 
@@ -862,22 +859,11 @@ void MainWindow::update_collect_number()
 	num_collect++;		//下一组采集组数
 }
 
-//采集卡未检测到外部触发信号
-void MainWindow::notrig_over()
-{
-	timer_judge->stop();
-	timer_trigger_waiting->stop();
-	collect_reset();
-	onecollect_over = true;
-	collect_state->setText(QString::fromLocal8Bit("采集停止"));
-	QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡未接收到触发信号"));
-}
-
 //采集停止或结束时更新电机位置、采集卡信息
 void MainWindow::collect_reset()
 {
 	qDebug() << "main 9collect_reset";
-	if((PX_lastData>=360)&&(mysetting.step_azAngle != 0))
+	if((PX_lastData >= 360)&&(mysetting.step_azAngle != 0))
 	{
 		PX_lastData = PX_lastData%360;
 		PortDialog->SetPX(PX_lastData);

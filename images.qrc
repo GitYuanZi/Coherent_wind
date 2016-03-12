@@ -10,5 +10,8 @@
         <file>images/Convert.ico</file>
         <file>images/port.png</file>
         <file>images/plotView.png</file>
+        <file>images/lab-logo.png</file>
+        <file>images/LOGO.png</file>
+        <file>images/help.png</file>
     </qresource>
 </RCC>
