@@ -5,6 +5,11 @@
 #include "Acqsettings.h"
 #include "settingfile.h"
 
+const int FACTOR  = 300;								//采样点计算公式系数
+const int SIZE_OF_FILE_HEADER = 68;						//单个单文件头的大小
+const int DATA_MEMORY = 170*1024*1024;					//采集卡内存空间B
+const int UPLOAD_SPEED = 20;							//上传速度MB/s
+
 namespace Ui {
 class paraDialog;
 }
@@ -20,6 +25,7 @@ public:
 	void init_setting(const ACQSETTING &setting, bool sop);
 	void initial_para();
 	ACQSETTING get_settings(void);
+	void check_update_SN();						//检查更新文件编号位数
 
 public slots:
     void on_checkBox_autocreate_datafile_clicked();
@@ -55,15 +61,15 @@ private slots:
 	void set_channelA();
 	void set_channelB();
 
-	void on_pushButton_conversion_clicked();
-	void on_pushButton_clicked();
-    void on_pushButton_pathModify_clicked();
-	void on_pushButton_dataFileName_sch_clicked();
-	void on_pushButton_save_clicked();
-	void on_pushButton_load_clicked();
-	void on_pushButton_reset_clicked();
-    void on_pushButton_sure_clicked();
-	void on_pushButton_cancel_clicked();
+	void on_pushButton_conversion_clicked();					//单位转换
+	void on_pushButton_clicked();								//单次最大脉冲数
+	void on_pushButton_pathModify_clicked();					//修改路径
+	void on_pushButton_dataFileName_sch_clicked();				//文件后缀名
+	void on_pushButton_save_clicked();							//保存键
+	void on_pushButton_load_clicked();							//加载键
+	void on_pushButton_reset_clicked();							//重置键
+	void on_pushButton_sure_clicked();							//确定键
+	void on_pushButton_cancel_clicked();						//取消键
 
 private:
     Ui::paraDialog *ui;
@@ -75,6 +81,7 @@ private:
 	int sampleNum;												//单个脉冲的采样点数
 	bool nocollecting;											//是否正在采集数据
 	bool trig_conversion;										//用于触发电平或延迟单位转换
+	int Suffix_needLength;										//文件编号所需最小位数
 
 	void update_show();
 	void update_s_filename();
@@ -84,7 +91,7 @@ private:
 	void single_filesize();										//单通道单文件数据量
 	void double_filesize();										//双通道单文件数据量
 	void filesize_over();										//判断单文件量超过采集卡内存
-	void Set_DatafilePath(QString str);
+	void show_DatafilePath(QString str);
 	quint64 getDiskFreeSpace(QString driver);					//获取路径下的硬盘剩余空间大小
 };
 

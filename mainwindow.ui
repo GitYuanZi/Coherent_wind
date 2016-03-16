@@ -235,7 +235,7 @@
      <normaloff>:/images/help.png</normaloff>:/images/help.png</iconset>
    </property>
    <property name="text">
-    <string>帮助(&amp;W)</string>
+    <string>帮助</string>
    </property>
    <property name="toolTip">
     <string>帮助</string>
@@ -244,7 +244,7 @@
     <string>帮助</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+W</string>
+    <string>F1</string>
    </property>
   </action>
   <action name="action_searchDevice">

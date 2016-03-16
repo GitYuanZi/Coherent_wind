@@ -43,11 +43,11 @@ MainWindow::MainWindow(QWidget *parent) :
 	//	connect(timer_trigger_waiting,SIGNAL(timeout()),this,SLOT(notrig_over()));
 
 	PortDialog = new portDialog(this);									//电机设置对话框
-	connect(PortDialog,SIGNAL(Motot_connect_status(bool)),this,SLOT(Motot_status(bool)));
+	connect(PortDialog,SIGNAL(Motot_connect_status(bool)),this,SLOT(Motor_status(bool)));
 	PortDialog->search_set_port(mysetting.SP);							//搜索并设置串口
 	connect(PortDialog,SIGNAL(SendPX(float)),this,SLOT(Motor_Position(float)));
 	connect(PortDialog,SIGNAL(Position_success()),this,SLOT(Motor_Arrived()));
-	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(set_stop()));
+	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(Motor_locus_error()));
 	timer_judge = new QTimer(this);
 	connect(timer_judge,SIGNAL(timeout()),this,SLOT(timer_count()));
 	connect(timer_judge,SIGNAL(timeout()),this,SLOT(judge_collect_condition()));
@@ -169,7 +169,7 @@ void MainWindow::Create_statusbar()
 	ADQ_state->setAlignment(Qt::AlignLeft);							//设置对齐方式，左侧对齐
 	bar->addWidget(ADQ_state);
 
-	motor_state =new QLabel;
+	motor_state = new QLabel;
 	motor_state->setMinimumSize(95,22);
 	motor_state->setAlignment(Qt::AlignLeft);
 	bar->addWidget(motor_state);
@@ -253,6 +253,7 @@ void MainWindow::on_action_about_triggered()
 {
 	HelpDialog = new helpDialog(this);
 	HelpDialog->exec();
+	delete HelpDialog;
 }
 
 //打开参数设置对话框
@@ -283,7 +284,7 @@ void MainWindow::on_action_set_triggered()
 		}
 		refresh();					//更新绘图窗口
 	}
-	delete ParaSetDlg;				//防止内存泄漏
+	delete ParaSetDlg;
 }
 
 //参数设置对话框关闭后，对绘图曲线部分进行更新
@@ -385,10 +386,11 @@ void MainWindow::on_action_start_triggered()
 		m_setfile.updatelogFile(text);
 
 		direction_intervalNum = mysetting.direction_intervalTime * FREQUENCY_OF_JUDGE;
-		dI_timer_counter = direction_intervalNum;		//为了第一次？
+		dI_timer_counter = direction_intervalNum;		//为了第一次
 
 		Create_DataFolder();			//创建数据存储文件夹
 		num_collect = 0;
+		locus_error = false;
 		stopped = false;				//stopped设置为false
 		notrig_signal = false;
 		thread_enough = true;
@@ -406,6 +408,7 @@ void MainWindow::on_action_start_triggered()
 //				cI_timer_counter = 0;
 				Num_perRound = 360/mysetting.step_azAngle;
 			}
+			isPosition_reached = false;								//初始值为false
 			collect_state->setText(QString::fromLocal8Bit("电机位置调整..."));
 			timer_judge->start(PERIOD_OF_JUDGE);
 			PortDialog->ABS_Rotate(mysetting.start_azAngle);
@@ -460,6 +463,9 @@ void MainWindow::hintInfo_handle(int controlNum)
 	case 10:
 		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集结束"));
 		break;
+	case 11:
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("电机位置错误，请重新采集"));
+		break;
 	default:
 		break;
 	}
@@ -468,7 +474,14 @@ void MainWindow::hintInfo_handle(int controlNum)
 //采集菜单中的停止按钮
 void MainWindow::on_action_stop_triggered()
 {
-	set_stop();
+	stopped = true;
+}
+
+void MainWindow::on_action_help_triggered()
+{
+	QProcess *mp_helpProcess = new QProcess(this);
+	QStringList argument("D:/Document_x64/Documents/Coherent_wind_lidar02/helphtml.CHM");
+	mp_helpProcess->start("hh.exe",argument);				//chm格式可用windows自带的hh.exe进行打开
 }
 
 //数据存储文件夹的创建
@@ -514,6 +527,11 @@ void MainWindow::judge_collect_condition()
 		onecollect_over = false;						//单次采集开始
 		dI_timer_counter = 0;							//判断次数清零
 
+		if(locus_error == true)
+		{
+			hintInfo_handle(11);
+			return;
+		}
 		collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 		success_configure = adq_collect();
 		qDebug() << "main 4adq_collect";
@@ -561,7 +579,7 @@ void MainWindow::Motor_Position(float a)
 }
 
 //更新状态栏中电机连接状态
-void MainWindow::Motot_status(bool a)
+void MainWindow::Motor_status(bool a)
 {
 	if(a == true)
 		motor_state->setText(QString::fromLocal8Bit("电机已打开"));
@@ -575,9 +593,9 @@ void MainWindow::Motor_Arrived()
 	isPosition_reached = true;
 }
 
-void MainWindow::set_stop()
+void MainWindow::Motor_locus_error()
 {
-	stopped = true;
+	locus_error = true;
 }
 
 //采集卡参数设置

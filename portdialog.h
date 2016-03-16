@@ -5,6 +5,8 @@
 #include "serialportthread.h"
 #include <QTimer>
 
+const int MOTOR_RESOLUTION = 96000;			//电机分辨率
+
 namespace Ui {
 class portDialog;
 }

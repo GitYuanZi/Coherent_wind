@@ -11,8 +11,6 @@
 #include <QString>
 #include <QDir>
 
-#define c 3														//光速
-
 paraDialog::paraDialog(QWidget *parent) :
 	QDialog(parent),
 	ui(new Ui::paraDialog)
@@ -68,6 +66,7 @@ void paraDialog::initial_para()
 	connect(ui->lineEdit_dataFileName_Suffix,&QLineEdit::textChanged,this,&paraDialog::set_dataFileName_Suffix);//后缀名
 	connect(ui->checkBox_channelA,&QCheckBox::clicked,this,&paraDialog::set_channelA);							//通道A
 	connect(ui->checkBox_channelB,&QCheckBox::clicked,this,&paraDialog::set_channelB);							//通道B
+	ui->lineEdit_DatafilePath->setReadOnly(true);
 }
 
 void paraDialog::update_show()
@@ -130,6 +129,7 @@ void paraDialog::update_show()
 	//文件存储
 	ui->lineEdit_DatafilePath->setText(psetting.DatafilePath);
 	ui->checkBox_autocreate_datafile->setChecked(psetting.autocreate_datafile);
+	on_pushButton_dataFileName_sch_clicked();							//更新最小序号，即后缀
 	if(psetting.isSingleCh)
 	{
 		ui->checkBox_channelA->setChecked(false);
@@ -146,15 +146,13 @@ void paraDialog::update_show()
 		ui->checkBox_channelB->setEnabled(true);
 		update_d_filename();
 	}
-	ui->lineEdit_dataFileName_Prefix->setText(psetting.dataFileName_Prefix);
-	on_pushButton_dataFileName_sch_clicked();												//更新最小序号，即后缀
 
 	//下方参考信息——探测方式
 	show_detect_mode();
 	//下方参考信息——预估探测时间
 	set_dect_time();
 	//下方参考信息——更新文件数据量
-	direct_size = 68+psetting.plsAccNum*psetting.sampleNum*2;								//单位B
+	direct_size = SIZE_OF_FILE_HEADER + psetting.plsAccNum*psetting.sampleNum*2;								//单位B
 	if(psetting.isSingleCh)
 		single_filesize();
 	else
@@ -196,7 +194,7 @@ void paraDialog::set_dect_time()
 {
 	int time_need = psetting.angleNum*psetting.step_azAngle/psetting.SP +
 					psetting.angleNum*psetting.sampleNum/(psetting.sampleFreq*1000000) +
-					psetting.angleNum*ui->lineEdit_sglfilesize->text().toFloat()/25;
+					psetting.angleNum*ui->lineEdit_sglfilesize->text().toFloat()/UPLOAD_SPEED;
 	if(psetting.step_azAngle == 0)
 		time_need = time_need + (psetting.angleNum-1)*psetting.direction_intervalTime;
 	else
@@ -253,7 +251,7 @@ void paraDialog::double_filesize()
 
 void paraDialog::filesize_over()
 {
-	if(direct_size > 170*1024*1024)
+	if(direct_size > DATA_MEMORY)
 	{
 		ui->pushButton_save->setEnabled(false);
 		ui->pushButton_sure->setEnabled(false);
@@ -362,6 +360,7 @@ void paraDialog::set_angleNum()														//方向数 决定圆周数，影�
 		psetting.angleNum = (int)(psetting.circleNum*360/psetting.step_azAngle);
 		ui->lineEdit_angleNum->setText(QString::number(psetting.angleNum));
 	}
+	check_update_SN();
 	set_dect_time();																//预估时间
 	if(ui->radioButton_singleCh->isChecked())										//总数据量
 		ui->lineEdit_totalsize->setText(QString::number(psetting.angleNum*direct_size/(1024*1024),'f',2));
@@ -479,7 +478,7 @@ void paraDialog::set_trigLevel_OR_holdOff()											//psetting获取编辑框�
 			}
 		}
 		else
-			psetting.trigHoldOffSamples = 550*ui->lineEdit_trigLevel_OR_holdOff->text().toFloat()/1000 + 0.05;
+			psetting.trigHoldOffSamples = psetting.sampleFreq*ui->lineEdit_trigLevel_OR_holdOff->text().toFloat()/1000 + 0.05;
 	}
 }
 
@@ -498,16 +497,16 @@ void paraDialog::set_time_circle_interval()
 void paraDialog::set_sampleFreq()													//采样频率 影响采样点数、单文件量、总数据量//psetting获取编辑框值
 {
 	psetting.sampleFreq = ui->comboBox_sampleFreq->currentText().toInt();
-	psetting.sampleNum = psetting.sampleFreq*2*psetting.detRange/300;
-	direct_size = 68+psetting.plsAccNum*psetting.sampleNum*2;						//单个方向上的数据量
+	psetting.sampleNum = psetting.sampleFreq*psetting.detRange/FACTOR;
+	direct_size = SIZE_OF_FILE_HEADER + psetting.plsAccNum*psetting.sampleNum*2;	//单个方向上的数据量
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
 }
 
 void paraDialog::set_detRange()														//探测距离 影响采样点数、单文件量、总数据量//psetting获取编辑框值
 {
 	psetting.detRange = 1000*(ui->lineEdit_detRange->text().toFloat());
-	psetting.sampleNum = psetting.sampleFreq*2*psetting.detRange/300;
-	direct_size = 68+psetting.plsAccNum*psetting.sampleNum*2;						//单个方向上的数据量
+	psetting.sampleNum = psetting.sampleFreq*psetting.detRange/FACTOR;
+	direct_size = SIZE_OF_FILE_HEADER + psetting.plsAccNum*psetting.sampleNum*2;	//单个方向上的数据量
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
 }
 
@@ -522,7 +521,7 @@ void paraDialog::set_filesize()														//参考信息中的单文件量和
 void paraDialog::set_plsAccNum()													//脉冲数影响单文件量、总数据量（双通道乘2）//psetting获取编辑框值
 {
 	psetting.plsAccNum = ui->lineEdit_plsAccNum->text().toInt();
-	direct_size = 68+psetting.plsAccNum*psetting.sampleNum*2;
+	direct_size = SIZE_OF_FILE_HEADER + psetting.plsAccNum*psetting.sampleNum*2;
 	set_filesize();
 }
 
@@ -543,6 +542,33 @@ void paraDialog::set_channelA()
 void paraDialog::set_channelB()
 {
 	psetting.channel_B = ui->checkBox_channelB->isChecked();
+}
+
+//路径显示设置
+void paraDialog::show_DatafilePath(QString str)
+{
+	QDir mypath(str);
+	if(!mypath.exists())															//路径不存在，红色
+		ui->lineEdit_DatafilePath->setStyleSheet("color: red;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
+	else																			//存在，黑色
+		ui->lineEdit_DatafilePath->setStyleSheet("color: black;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
+	psetting.DatafilePath = str;
+	ui->lineEdit_DatafilePath->setText(str);
+}
+
+//检查更新文件编号位数
+void paraDialog::check_update_SN()
+{
+	int Suffix_length = psetting.dataFileName_Suffix.length();
+	int minNum = psetting.dataFileName_Suffix.toInt();
+	int maxNum = psetting.angleNum + minNum - 1;
+	Suffix_needLength = QString::number(maxNum).length();
+	if(Suffix_needLength > Suffix_length)
+	{
+		psetting.dataFileName_Suffix.sprintf("%08d",minNum);
+		psetting.dataFileName_Suffix = psetting.dataFileName_Suffix.right(Suffix_needLength);
+		ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
+	}
 }
 
 void paraDialog::on_pushButton_conversion_clicked()
@@ -583,9 +609,9 @@ void paraDialog::on_pushButton_clicked()
 {
 	int max_plsAcc;
 	if(psetting.trigger_mode == 2)					//外部触发
-		max_plsAcc = (170*1024*1024-68)/(psetting.sampleNum*2 + psetting.trigHoldOffSamples*2);
+		max_plsAcc = (DATA_MEMORY - SIZE_OF_FILE_HEADER)/(psetting.sampleNum*2 + psetting.trigHoldOffSamples*2);
 	else											//电平触发
-		max_plsAcc = (170*1024*1024-68)/(2*psetting.sampleNum);
+		max_plsAcc = (DATA_MEMORY - SIZE_OF_FILE_HEADER)/(2*psetting.sampleNum);
 	ui->lineEdit_plsAccNum->setText(QString::number(max_plsAcc));
 }
 
@@ -636,12 +662,13 @@ void paraDialog::on_checkBox_autocreate_datafile_clicked()
 			qDebug()<<"Dir Match"<<str<<endl;
 		}
 	}
-	Set_DatafilePath(str);
+	show_DatafilePath(str);
 }
 
-void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
+//修改路径键
+void paraDialog::on_pushButton_pathModify_clicked()
 {
-	QFileDialog *fd=new QFileDialog(this,QString::fromLocal8Bit("选择文件夹"),psetting.DatafilePath);
+	QFileDialog *fd = new QFileDialog(this,QString::fromLocal8Bit("选择文件夹"),psetting.DatafilePath);
 	fd->setFileMode(QFileDialog::Directory);
 	fd->setOption(QFileDialog::ShowDirsOnly, true);
 	if(fd->exec() == QFileDialog::Accepted)
@@ -650,23 +677,13 @@ void paraDialog::on_pushButton_pathModify_clicked()									//修改路径键
 		QString str = static_cast<QString>(file.at(0));
 		if (str.length() == 3)
 			str.resize(2);
-		Set_DatafilePath(str);
+		show_DatafilePath(str);
 	}
 	on_checkBox_autocreate_datafile_clicked();
 }
 
-void paraDialog::Set_DatafilePath(QString str)										//路径显示设置
-{
-	QDir mypath(str);
-	if(!mypath.exists())															//路径不存在，红色
-		ui->lineEdit_DatafilePath->setStyleSheet("color: red;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
-	else																			//存在，黑色
-		ui->lineEdit_DatafilePath->setStyleSheet("color: black;""font-size:10pt;""font-family:'Microsoft YaHei UI';");
-	psetting.DatafilePath = str;
-	ui->lineEdit_DatafilePath->setText(str);
-}
-
-void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找最小序号
+//自动查找最小序号
+void paraDialog::on_pushButton_dataFileName_sch_clicked()
 {
 	QString filter_str;
 	if(psetting.isSingleCh)															//设置文件名过滤器，如"Prefix-[0123456789][0123456789][0123456789]"的形式
@@ -674,6 +691,8 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找�
 	else
 		filter_str = psetting.dataFileName_Prefix + "_ch[AB]_";
 	int suffix_l = psetting.dataFileName_Suffix.length();
+	if(psetting.dataFileName_Suffix.length() == 0)
+		suffix_l = 3;																//默认的文件后缀名的长度为3
 	for(int i=0;i<suffix_l;i++)
 		filter_str += "[0123456789]";
 
@@ -702,11 +721,19 @@ void paraDialog::on_pushButton_dataFileName_sch_clicked()							//自动查找�
 		psetting.dataFileName_Suffix.sprintf("%08d", max_num);
 		psetting.dataFileName_Suffix = psetting.dataFileName_Suffix.right(suffix_l);
 	}
+
 	ui->lineEdit_dataFileName_Suffix->setText(psetting.dataFileName_Suffix);
 }
 
-void paraDialog::on_pushButton_save_clicked()										//保存键
+//保存键
+void paraDialog::on_pushButton_save_clicked()
 {
+	if(psetting.dataFileName_Suffix.length() < Suffix_needLength)
+	{
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),
+								 QString::fromLocal8Bit("请重新设置序号，位数最小为") + QString::number(Suffix_needLength));
+		return;
+	}
 	profile_path = QFileDialog::getSaveFileName(this,QString::fromLocal8Bit("保存"),".","*.ini");
 	if(!profile_path.isEmpty())
 	{
@@ -716,7 +743,8 @@ void paraDialog::on_pushButton_save_clicked()										//保存键
 	}
 }
 
-void paraDialog::on_pushButton_load_clicked()										//加载键
+//加载键
+void paraDialog::on_pushButton_load_clicked()
 {
 	profile_path = QFileDialog::getOpenFileName(this,QString::fromLocal8Bit("打开"),".","*.ini");
 	if(!profile_path.isEmpty())
@@ -728,13 +756,15 @@ void paraDialog::on_pushButton_load_clicked()										//加载键
 	}
 }
 
-void paraDialog::on_pushButton_reset_clicked()										//重置键
+//重置键
+void paraDialog::on_pushButton_reset_clicked()
 {
 	psetting = defaulsetting;
 	update_show();
 }
 
-void paraDialog::on_pushButton_sure_clicked()										//确定键
+//确定键
+void paraDialog::on_pushButton_sure_clicked()
 {
 //	if(dlg_setfile.isSettingsChanged(psetting))										//文件未保存时
 //	{
@@ -749,6 +779,13 @@ void paraDialog::on_pushButton_sure_clicked()										//确定键
 //	}
 //	else																			//文件若已保存，则accept()
 //		accept();
+	if(psetting.dataFileName_Suffix.length() < Suffix_needLength)
+	{
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),
+								 QString::fromLocal8Bit("请重新设置序号，位数最小为") + QString::number(Suffix_needLength));
+		return;
+	}
+
 	QString Disk_Name = psetting.DatafilePath.left(3);								//路径对应硬盘分区名
 	quint64 freeSpace = getDiskFreeSpace(Disk_Name);								//获取路径对应硬盘分区的空间大小MB
 	float totalfile_Space = ui->lineEdit_totalsize->text().toFloat();				//获取数据文件总量
@@ -760,7 +797,8 @@ void paraDialog::on_pushButton_sure_clicked()										//确定键
 							 + QString::number(freeSpace) + QString::fromLocal8Bit("MB"));
 }
 
-void paraDialog::on_pushButton_cancel_clicked()										//取消键
+//取消键
+void paraDialog::on_pushButton_cancel_clicked()
 {
 	reject();
 }

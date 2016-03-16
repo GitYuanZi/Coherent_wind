@@ -52,6 +52,7 @@ private slots:
 	void on_action_stop_triggered();				//停止
 	void on_action_serialport_triggered();			//串口
 	void on_action_collect_instruct_triggered(bool checked);
+	void on_action_help_triggered();
 
 //	void notrig_over();								//无外部触发信号
 	void collect_reset();							//采集结束后停止时，关闭multi-record
@@ -62,8 +63,8 @@ private slots:
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void Motor_Position(float a);					//获取当前位置，更新圆盘Dial
 	void Motor_Arrived();							//电机到达预采集方位
-	void Motot_status(bool a);						//状态栏显示电机连接状态
-	void set_stop();								//stopped值置为true
+	void Motor_status(bool a);						//状态栏显示电机连接状态
+	void Motor_locus_error();						//电机位置错误
 	void hintInfo_handle(int controlNum);			//采集停止提示信息、处理
 
 protected:
@@ -88,6 +89,7 @@ private:
 	bool thread_enough;								//存储线程足够
 	bool notrig_signal;								//无外部触发信号
 	bool need_instruct;								//本次采集记录说明
+	bool locus_error;								//电机位置错误
 
 	//USB采集卡
 	void *adq_cu;

@@ -224,33 +224,33 @@ void portDialog::update_status()
 void portDialog::ABS_Rotate(int Pa)
 {
 	PX_data = Pa;
-	Order_str = "PA="+QString::number(Pa*800/3)+";SP="+QString::number(retSP*800/3)+";BG;";
+	Order_str = "PA="+QString::number(Pa*MOTOR_RESOLUTION/360)+";SP="+QString::number(retSP*MOTOR_RESOLUTION/360)+";BG;";
 	thread_port.transaction(portname,Order_str);
 }
 
 void portDialog::CW_Rotate(int Pr)
 {
 	PX_data = PX_data + Pr;
-	Order_str = "PR="+QString::number(Pr*800/3)+";SP="+QString::number(retSP*800/3)+";BG;";
+	Order_str = "PR="+QString::number(Pr*MOTOR_RESOLUTION/360)+";SP="+QString::number(retSP*MOTOR_RESOLUTION/360)+";BG;";
 	thread_port.transaction(portname,Order_str);
 }
 
 void portDialog::CCW_Rotate(int Pr)
 {
 	PX_data = PX_data - Pr;
-	Order_str = "PR=-"+QString::number(Pr*800/3)+";BG;";
+	Order_str = "PR=-"+QString::number(Pr*MOTOR_RESOLUTION/360)+";BG;";
 	thread_port.transaction(portname,Order_str);
 }
 
 void portDialog::SetPX(int Px)
 {
-	Order_str = "MO=0;PX="+QString::number(Px*800/3)+";MO=1;";
+	Order_str = "MO=0;PX="+QString::number(Px*MOTOR_RESOLUTION/360)+";MO=1;";
 	thread_port.transaction(portname,Order_str);
 }
 
 void portDialog::SetSP(int Sp)
 {
-	Order_str = "SP="+QString::number(Sp*800/3)+";AC=48000;DC=48000;PX;";
+	Order_str = "SP="+QString::number(Sp*MOTOR_RESOLUTION/360)+";AC=48000;DC=48000;PX;";
 	thread_port.transaction(portname,Order_str);
 }
 
@@ -284,7 +284,7 @@ void portDialog::receive_response(const QString &s)
 			if(ret2 == "0")
 				timer1->stop();								//电机停止转动，关闭定时器
 
-			float ret1_data = ret1.toFloat()*3/800;
+			float ret1_data = ret1.toFloat()*360/MOTOR_RESOLUTION;
 			emit this->SendPX(ret1_data);					//更新左侧栏圆盘
 
 			if(portDia_status)
@@ -294,7 +294,7 @@ void portDialog::receive_response(const QString &s)
 					update_status();
 			}
 			else
-				if(ret2 == "0")
+				if(ret2 == "0")								//电机停止转动下
 				{
 					int ret1_int = ret1_data + 0.5;
 					if(PX_data == ret1_int)
