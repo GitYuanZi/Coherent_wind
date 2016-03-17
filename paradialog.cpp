@@ -500,6 +500,10 @@ void paraDialog::set_sampleFreq()													//采样频率 影响采样点数�
 	psetting.sampleNum = psetting.sampleFreq*psetting.detRange/FACTOR;
 	direct_size = SIZE_OF_FILE_HEADER + psetting.plsAccNum*psetting.sampleNum*2;	//单个方向上的数据量
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
+
+	//外部触发
+	if((psetting.trigger_mode == 2)&&(trig_conversion == true))
+		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number((float)psetting.trigHoldOffSamples*1000/psetting.sampleFreq,'f',2));
 }
 
 void paraDialog::set_detRange()														//探测距离 影响采样点数、单文件量、总数据量//psetting获取编辑框值
