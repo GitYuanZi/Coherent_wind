@@ -125,7 +125,7 @@ void PlotWindow::update_xAxis(bool countnum)
 {
 	QFont axistitlefont;
 	axistitlefont.setFamily("Microsoft YaHei UI");
-	axistitlefont.setPixelSize(16);
+	axistitlefont.setPixelSize(15);
 	axistitlefont.setBold(false);
 	QwtText axistitle1(QString::fromLocal8Bit("采样序列"));
 	QwtText axistitle2(QString::fromLocal8Bit("距离（m）"));
@@ -135,7 +135,6 @@ void PlotWindow::update_xAxis(bool countnum)
 	{
 		qwtPlot->setAxisScale(qwtPlot->xBottom,0,plot_sampleNum);	//设置x轴范围
 		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle1);
-//		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("采样点"));
 		for(uint i = 0; i<plot_sampleNum; i++)						//x进行初始赋值
 			xValues[i] = i;											//横坐标为计数序号
 	}
@@ -143,7 +142,6 @@ void PlotWindow::update_xAxis(bool countnum)
 	{
 		qwtPlot->setAxisScale(qwtPlot->xBottom,0,plot_sampleNum*150/plot_sampleFreq);
 		qwtPlot->setAxisTitle(QwtPlot::xBottom,axistitle2);
-//		qwtPlot->setAxisTitle(QwtPlot::xBottom,QString::fromLocal8Bit("距离（m）"));
 		for(uint i = 0; i<plot_sampleNum; i++)						//x进行初始赋值
 			xValues[i] = (float)(i)*150/plot_sampleFreq;			//横坐标x转换成长度单位
 	}
@@ -159,7 +157,7 @@ void PlotWindow::set_titleName(QString ch_name)
 	QwtText title(ch_name);
 	QFont titlefont;
 	titlefont.setFamily("Microsoft YaHei UI");
-	titlefont.setPixelSize(16);
+	titlefont.setPixelSize(15);
 	titlefont.setBold(false);
 	title.setFont(titlefont);
 	qwtPlot->setTitle(title);

@@ -421,7 +421,6 @@ void MainWindow::on_action_start_triggered()
 //采集停止的提示信息和处理
 void MainWindow::hintInfo_handle(int controlNum)
 {
-	qDebug() << "enter error_info_handle()";
 	if(controlNum >4)
 	{
 		timer_judge->stop();
