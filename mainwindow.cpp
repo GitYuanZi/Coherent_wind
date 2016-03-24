@@ -454,7 +454,7 @@ void MainWindow::hintInfo_handle(int controlNum)
 		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡数据采集失败"));
 		break;
 	case 8:
-		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡出现故障"));
+		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("采集卡出现故障，请重新启动连接采集卡"));
 		break;
 	case 9:
 		QMessageBox::information(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("单文件数据量较大，存储较慢，请适当降低转速"));
@@ -478,8 +478,9 @@ void MainWindow::on_action_stop_triggered()
 
 void MainWindow::on_action_help_triggered()
 {
+	QDir help;
 	QProcess *mp_helpProcess = new QProcess(this);
-	QStringList argument("D:/Document_x64/Documents/Coherent_wind_lidar02/helphtml.CHM");
+	QStringList argument(help.currentPath()+"/helphtml.CHM");
 	mp_helpProcess->start("hh.exe",argument);				//chm格式可用windows自带的hh.exe进行打开
 }
 
@@ -494,7 +495,6 @@ void MainWindow::Create_DataFolder()
 //方向间、圆周间间隔计数
 void MainWindow::timer_count()
 {
-	qDebug() << "main 1timer_count";
 	dI_timer_counter++;
 	cI_timer_counter++;
 }
@@ -502,7 +502,11 @@ void MainWindow::timer_count()
 //定时判断是否进行下一组采集
 void MainWindow::judge_collect_condition()
 {
-	qDebug() << "main 2judge_collectCondition";
+	if(locus_error == true)
+	{
+		hintInfo_handle(11);
+		return;
+	}
 	if((dI_timer_counter >= direction_intervalNum)
 			&&(isPosition_reached == true)&&(onecollect_over == true))
 	{
@@ -526,11 +530,6 @@ void MainWindow::judge_collect_condition()
 		onecollect_over = false;						//单次采集开始
 		dI_timer_counter = 0;							//判断次数清零
 
-		if(locus_error == true)
-		{
-			hintInfo_handle(11);
-			return;
-		}
 		collect_state->setText(QString::fromLocal8Bit("数据采集中..."));
 		success_configure = adq_collect();
 		qDebug() << "main 4adq_collect";

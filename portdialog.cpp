@@ -264,6 +264,7 @@ void portDialog::DemandPX()
 {
 	if(handle_PX == false)
 	{
+		handle_PX = true;
 		Order_str = "PX;MS;";
 		thread_port.transaction(portname,Order_str);
 	}

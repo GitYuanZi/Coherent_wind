@@ -5,7 +5,7 @@
 #include "Acqsettings.h"
 #include "settingfile.h"
 
-const int FACTOR  = 300;								//采样点计算公式系数
+const int FACTOR  = 150;								//采样点计算公式系数
 const int SIZE_OF_FILE_HEADER = 68;						//单个单文件头的大小
 const int DATA_MEMORY = 170*1024*1024;					//采集卡内存空间B
 const int UPLOAD_SPEED = 20;							//上传速度MB/s
