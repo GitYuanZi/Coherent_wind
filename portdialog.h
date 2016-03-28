@@ -35,7 +35,7 @@ public:
 signals:
 	void portdlg_send(const QString &re);	//对话框返回字符串到主程序
 	void SendPX(float a);					//PX值发送给主程序
-	void Position_success();				//电机到达预定位置
+	void Position_success(int a);			//电机到达预定位置
 	void Position_Error();					//电机未达到预定位置
 	void Motot_connect_status(bool motorConnect);	//电机连接状态
 

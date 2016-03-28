@@ -62,7 +62,7 @@ private slots:
 	void judge_collect_condition();					//用于判断是否进行采集
 	void receive_storefinish();						//存储线程完成，线程数减1
 	void Motor_Position(float a);					//获取当前位置，更新圆盘Dial
-	void Motor_Arrived();							//电机到达预采集方位
+	void Motor_Arrived(int a);						//电机到达预采集方位
 	void Motor_status(bool a);						//状态栏显示电机连接状态
 	void Motor_locus_error();						//电机位置错误
 	void hintInfo_handle(int controlNum);			//采集停止提示信息、处理

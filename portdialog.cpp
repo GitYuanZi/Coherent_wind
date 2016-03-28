@@ -298,10 +298,10 @@ void portDialog::receive_response(const QString &s)
 				if(ret2 == "0")								//电机停止转动下
 				{
 					int ret1_int = ret1_data + 0.5;
-					if(PX_data == ret1_int)
-						emit this->Position_success();		//电机到达预定位置
+					if(((PX_data-3) <= ret1_int)&&(ret1_int <= (PX_data+3)))
+						emit this->Position_success(ret1_int);
 					else
-						emit this->Position_Error();		//位置错误
+						emit this->Position_Error();		//电机位置错误
 				}
 			handle_PX = false;								//PX;MS;命令处理完毕
 		}
