@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent) :
 	connect(PortDialog,SIGNAL(Motot_connect_status(bool)),this,SLOT(Motor_status(bool)));
 	PortDialog->search_set_port(mysetting.SP);							//搜索并设置串口
 	connect(PortDialog,SIGNAL(SendPX(float)),this,SLOT(Motor_Position(float)));
-	connect(PortDialog,SIGNAL(Position_success(int)),this,SLOT(Motor_Arrived(int)));
+	connect(PortDialog,SIGNAL(Position_success()),this,SLOT(Motor_Arrived()));
 	connect(PortDialog,SIGNAL(Position_Error()),this,SLOT(Motor_locus_error()));
 	timer_judge = new QTimer(this);
 	connect(timer_judge,SIGNAL(timeout()),this,SLOT(timer_count()));
@@ -586,10 +586,9 @@ void MainWindow::Motor_status(bool a)
 }
 
 //电机到达预采集位置
-void MainWindow::Motor_Arrived(int a)
+void MainWindow::Motor_Arrived()
 {
 	isPosition_reached = true;
-	direction_angle = a;
 }
 
 void MainWindow::Motor_locus_error()
@@ -708,6 +707,7 @@ void MainWindow::single_upload_store()
 		}
 	}
 
+	direction_angle = mysetting.start_azAngle + num_collect*mysetting.step_azAngle;
 	if(plot1show)
 		plotWindow_1->datashow(rd_data1,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
 	if(!threadA.isRunning())
@@ -800,6 +800,7 @@ void MainWindow::double_upload_store()
 		}
 	}
 
+	direction_angle = mysetting.start_azAngle + num_collect*mysetting.step_azAngle;
 	if(plot1show)
 		plotWindow_1->datashow(rd_dataa,mysetting.plsAccNum);	//绘图窗口显示cha最后一组脉冲
 	if(plot2show)

@@ -299,7 +299,7 @@ void portDialog::receive_response(const QString &s)
 				{
 					int ret1_int = ret1_data + 0.5;
 					if(((PX_data-3) <= ret1_int)&&(ret1_int <= (PX_data+3)))
-						emit this->Position_success(ret1_int);
+						emit this->Position_success();
 					else
 						emit this->Position_Error();		//电机位置错误
 				}
