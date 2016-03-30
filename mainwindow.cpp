@@ -707,7 +707,7 @@ void MainWindow::single_upload_store()
 		}
 	}
 
-	direction_angle = mysetting.start_azAngle + num_collect*mysetting.step_azAngle;
+	direction_angle = (mysetting.start_azAngle + num_collect*mysetting.step_azAngle)%360;
 	if(plot1show)
 		plotWindow_1->datashow(rd_data1,mysetting.plsAccNum);//绘图窗口显示最后一组脉冲
 	if(!threadA.isRunning())
@@ -800,7 +800,7 @@ void MainWindow::double_upload_store()
 		}
 	}
 
-	direction_angle = mysetting.start_azAngle + num_collect*mysetting.step_azAngle;
+	direction_angle = (mysetting.start_azAngle + num_collect*mysetting.step_azAngle)%360;
 	if(plot1show)
 		plotWindow_1->datashow(rd_dataa,mysetting.plsAccNum);	//绘图窗口显示cha最后一组脉冲
 	if(plot2show)
