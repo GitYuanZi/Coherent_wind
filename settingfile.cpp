@@ -40,16 +40,17 @@ void settingFile::writeTo_file(const ACQSETTING &setting,const QString &a )
 	settings.setValue("anglekey",fsetting.anglekey);					//方向数
 	settings.setValue("circlekey",fsetting.circlekey);					//圆周数
 	settings.setValue("SP",fsetting.SP);								//电机速度
+	settings.setValue("time_direct_interval",fsetting.direct_intervalTime);//方向间间隔
+	settings.setValue("time_circle_interval",fsetting.time_circle_interval);//圆周间间隔
 	settings.endGroup();
 
 	settings.beginGroup("Sample_parameters");
-	settings.setValue("singleCh",fsetting.isSingleCh);					//单通道
+	settings.setValue("isSingleCh",fsetting.isSingleCh);				//单通道
 //	settings.setValue("doubleCh",fsetting.doubleCh);					//双通道
 	settings.setValue("trigger_mode",fsetting.trigger_mode);			//触发方式
 	settings.setValue("trigLevel",fsetting.trigLevel);					//触发电平
-	settings.setValue("trigHoldOffSamples",fsetting.trigHoldOffSamples);//触发延迟
-	settings.setValue("time_direct_interval",fsetting.direction_intervalTime);//方向间间隔
-	settings.setValue("time_circle_interval",fsetting.time_circle_interval);//圆周间间隔
+	settings.setValue("isPreTrig",fsetting.isPreTrig);					//预触发
+	settings.setValue("Pre_OR_HoldOff_Samples",fsetting.Pre_OR_HoldOff_Samples);//触发延迟
 	settings.setValue("sampleFreq",fsetting.sampleFreq);				//采样频率
 	settings.setValue("detRange",fsetting.detRange);					//探测距离
 	settings.setValue("sampleNum",fsetting.sampleNum);
@@ -86,16 +87,17 @@ void settingFile::readFrom_file(const QString &b)
 	fsetting.anglekey = settings.value("anglekey").toBool();				//方向键
 	fsetting.circlekey = settings.value("circlekey").toBool();				//圆周键
 	fsetting.SP = settings.value("SP").toInt();								//电机速度
+	fsetting.direct_intervalTime = settings.value("time_direct_interval").toFloat();//方向间间隔
+	fsetting.time_circle_interval = settings.value("time_circle_interval").toFloat();//圆周间间隔
 	settings.endGroup();
 
 	settings.beginGroup("Sample_parameters");
-	fsetting.isSingleCh = settings.value("singleCh").toBool();				//单通道
+	fsetting.isSingleCh = settings.value("isSingleCh").toBool();			//单通道
 //	fsetting.doubleCh = settings.value("doubleCh").toBool();				//双通道
 	fsetting.trigger_mode = settings.value("trigger_mode").toInt();			//触发方式
 	fsetting.trigLevel = settings.value("trigLevel").toInt();				//触发电平
-	fsetting.trigHoldOffSamples = settings.value("trigHoldOffSamples").toInt();//触发延迟
-	fsetting.direction_intervalTime = settings.value("time_direct_interval").toFloat();//方向间间隔
-	fsetting.time_circle_interval = settings.value("time_circle_interval").toFloat();//圆周间间隔
+	fsetting.isPreTrig = settings.value("isPreTrig").toBool();				//预触发
+	fsetting.Pre_OR_HoldOff_Samples = settings.value("Pre_OR_HoldOff_Samples").toInt();//触发延迟
 	fsetting.sampleFreq = settings.value("sampleFreq").toInt();				//采样频率
 	fsetting.detRange = settings.value("detRange").toFloat();				//探测距离
 	fsetting.sampleNum = settings.value("sampleNum").toInt();				//采样点数
@@ -141,16 +143,17 @@ void settingFile::test_create_file(const QString &c)
 		settings.setValue("anglekey",true);					//方向键
 		settings.setValue("circlekey",false);				//圆周键
 		settings.setValue("SP",90);							//电机速度
+		settings.setValue("time_direct_interval",0);		//方向间间隔
+		settings.setValue("time_circle_interval",0);		//圆周间间隔
 		settings.endGroup();
 
 		settings.beginGroup("Sample_parameters");
-		settings.setValue("singleCh",true);					//单通道
+		settings.setValue("isSingleCh",true);				//单通道
 		settings.setValue("doubleCh",false);				//双通道
 		settings.setValue("trigger_mode",3);				//触发方式
 		settings.setValue("trigLevel",1);					//触发电平
-		settings.setValue("trigHoldOffSamples",500);		//触发延迟
-		settings.setValue("time_direct_interval",0);		//方向间间隔
-		settings.setValue("time_circle_interval",0);		//圆周间间隔
+		settings.setValue("isPreTrig",true);				//预触发
+		settings.setValue("Pre_OR_HoldOff_Samples",500);	//触发延迟
 		settings.setValue("sampleFreq",550);				//采样频率
 		settings.setValue("detRange",6000);					//探测距离
 		settings.setValue("sampleNum",22000);				//采样点数
@@ -221,8 +224,12 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 		return true;
 	if(fsetting.SP != dlgsetting.SP)								//电机速度
 		return true;
+	if(fsetting.direct_intervalTime != dlgsetting.direct_intervalTime)
+		return true;
+	if(fsetting.time_circle_interval != dlgsetting.time_circle_interval)
+		return true;
 
-	if(fsetting.isSingleCh != dlgsetting.isSingleCh)					//单通道or双通道
+	if(fsetting.isSingleCh != dlgsetting.isSingleCh)				//单通道or双通道
 		return true;
 //	if(fsetting.doubleCh != dlgsetting.doubleCh)					//双通道
 //		return true;
@@ -230,11 +237,9 @@ bool settingFile::isSettingsChanged(const ACQSETTING &setting)
 		return true;
 	if(fsetting.trigLevel != dlgsetting.trigLevel)					//触发电平
 		return true;
-	if(fsetting.trigHoldOffSamples != dlgsetting.trigHoldOffSamples)//触发延迟
+	if(fsetting.isPreTrig != dlgsetting.isPreTrig)
 		return true;
-	if(fsetting.direction_intervalTime != dlgsetting.direction_intervalTime)
-		return true;
-	if(fsetting.time_circle_interval != dlgsetting.time_circle_interval)
+	if(fsetting.Pre_OR_HoldOff_Samples != dlgsetting.Pre_OR_HoldOff_Samples)//触发延迟
 		return true;
 	if(fsetting.sampleFreq != dlgsetting.sampleFreq)				//采样频率
 		return true;

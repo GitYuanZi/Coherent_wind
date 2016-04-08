@@ -19,15 +19,15 @@ typedef struct
 	bool anglekey;				//方向键
 	bool circlekey;				//圆周键
 	quint16 SP;					//驱动器速度
+	float direct_intervalTime;	//方向间间隔
+	float time_circle_interval;	//圆周间间隔
 
     //采样参数
 	bool isSingleCh;			//是否单通道
-//	bool doubleCh;				//双通道
 	int trigger_mode;			//触发方式
 	qint16 trigLevel;			//触发电平
-	qint16 trigHoldOffSamples;	//触发延迟
-	float direction_intervalTime;	//方向间间隔
-	float time_circle_interval;	//圆周间间隔
+	bool isPreTrig;				//预触发
+	qint16 Pre_OR_HoldOff_Samples;	//预触发或触发延迟数
 	quint16 sampleFreq;			//采样频率
 	float detRange;				//采样距离
 	quint32 sampleNum;			//采样点数

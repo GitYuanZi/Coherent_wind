@@ -20,7 +20,8 @@
 #include <QCloseEvent>
 #include <QLabel>
 
-const int TRIGGER_WAIT_TIME = 4000;		//触发等待超时设定（ms）
+const int LEVELTRIG_WAIT_TIME = 60000;	//电平触发等待超时设定（ms）
+const int EXTERNTRIG_WATETIME = 4000;	//外部触发等待超时设定（ms)
 const int PERIOD_OF_JUDGE = 100;		//检测采集条件是否满足的周期（ms）
 const int FREQUENCY_OF_JUDGE = 1000/PERIOD_OF_JUDGE;			//检测采集条件是否满足的频率（Hz）
 const int FREQUENCY_OF_JUDGE_PERMIN = 60*FREQUENCY_OF_JUDGE;		//检测采集条件是否满足的频率（每分钟）

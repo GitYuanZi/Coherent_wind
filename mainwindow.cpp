@@ -385,7 +385,7 @@ void MainWindow::on_action_start_triggered()
 		}
 		m_setfile.updatelogFile(text);
 
-		direction_intervalNum = mysetting.direction_intervalTime * FREQUENCY_OF_JUDGE;
+		direction_intervalNum = mysetting.direct_intervalTime * FREQUENCY_OF_JUDGE;
 		dI_timer_counter = direction_intervalNum;		//为了第一次
 
 		Create_DataFolder();			//创建数据存储文件夹
@@ -614,6 +614,18 @@ bool MainWindow::adq_para_set()
 		if(ADQ212_SetLvlTrigChannel(adq_cu,1,trig_channel) == 0)
 			return false;
 	}
+
+	if(mysetting.isPreTrig)
+	{
+		if(ADQ212_SetPreTrigSamples(adq_cu,1,mysetting.Pre_OR_HoldOff_Samples) == 0)
+			return false;
+	}
+	else
+	{
+		if(ADQ212_SetTriggerHoldOffSamples(adq_cu,1,mysetting.Pre_OR_HoldOff_Samples) == 0)
+			return false;
+	}
+
 	int clock_source = 0;						//时钟源选择0，内部时钟，内部参考
 	if(ADQ212_SetClockSource(adq_cu,1,clock_source) == 0)
 		return false;
@@ -622,11 +634,6 @@ bool MainWindow::adq_para_set()
 		return false;
 	number_of_records = mysetting.plsAccNum;	//脉冲数
 	samples_per_record = mysetting.sampleNum;	//采样点数
-	if(mysetting.trigger_mode == 2)				//外部触发时，设置触发延迟
-	{
-		if(ADQ212_SetTriggerHoldOffSamples(adq_cu,1,mysetting.trigHoldOffSamples) == 0)
-			return false;
-	}
 	if(ADQ212_MultiRecordSetup(adq_cu,1,number_of_records,samples_per_record) == 0)
 		return false;
 	return true;
@@ -653,7 +660,10 @@ bool MainWindow::adq_collect()
 	timestr = collectTime.toString("yyyy/MM/dd hh:mm:ss");
 	qDebug() << "main 3Please trig your device to collect data.";
 	int trigged;
-	timer_trigger_waiting->start(TRIGGER_WAIT_TIME);
+	if(mysetting.trigger_mode == 3)
+		timer_trigger_waiting->start(LEVELTRIG_WAIT_TIME);
+	else
+		timer_trigger_waiting->start(EXTERNTRIG_WATETIME);
 	do
 	{
 		QCoreApplication::processEvents();

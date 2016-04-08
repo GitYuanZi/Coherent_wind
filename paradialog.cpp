@@ -51,13 +51,16 @@ void paraDialog::initial_para()
 	connect(ui->radioButton_anglekey,&QRadioButton::clicked,this,&paraDialog::set_anglekey);					//方向键
 	connect(ui->radioButton_circlekey,&QRadioButton::clicked,this,&paraDialog::set_circlekey);					//圆周键
 	connect(ui->lineEdit_SP,&QLineEdit::textChanged,this,&paraDialog::set_motorSP);								//最高转速 -> 探测时间
+	connect(ui->lineEdit_direct_interval,&QLineEdit::textChanged,this,&paraDialog::set_time_direct_interval);
+	connect(ui->lineEdit_circle_interval,&QLineEdit::textChanged,this,&paraDialog::set_time_circle_interval);
 
 	connect(ui->radioButton_singleCh,&QRadioButton::clicked,this,&paraDialog::set_singleCh);					//单通道
 	connect(ui->radioButton_doubleCh,&QRadioButton::clicked,this,&paraDialog::set_doubleCh);					//双通道
 	connect(ui->comboBox_trig_mode,&QComboBox::currentTextChanged,this,&paraDialog::set_trig_mode);
-	connect(ui->lineEdit_trigLevel_OR_holdOff,&QLineEdit::textChanged,this,&paraDialog::set_trigLevel_OR_holdOff);//触发电平、触发延迟
-	connect(ui->lineEdit_direct_interval,&QLineEdit::textChanged,this,&paraDialog::set_time_direct_interval);
-	connect(ui->lineEdit_circle_interval,&QLineEdit::textChanged,this,&paraDialog::set_time_circle_interval);
+	connect(ui->lineEdit_trigLevel,&QLineEdit::textChanged,this,&paraDialog::set_trigLevel);					//触发电平
+	connect(ui->radioButton_Pre,&QRadioButton::clicked,this,&paraDialog::set_Pre);
+	connect(ui->radioButton_holdOff,&QRadioButton::clicked,this,&paraDialog::set_HoldOff);
+	connect(ui->lineEdit_Pre_holdOff,&QLineEdit::textChanged,this,&paraDialog::set_Pre_OR_HoldOff);				//预触发或触发延迟
 	connect(ui->comboBox_sampleFreq,&QComboBox::currentTextChanged,this,&paraDialog::set_sampleFreq);			//采样频率 -> 采样点数
 	connect(ui->lineEdit_detRange,&QLineEdit::textChanged,this,&paraDialog::set_detRange);						//探测距离 -> 采样点数
 	connect(ui->lineEdit_sampleNum,&QLineEdit::textChanged,this,&paraDialog::set_filesize);						//采样点数 -> 数据量
@@ -66,6 +69,7 @@ void paraDialog::initial_para()
 	connect(ui->lineEdit_dataFileName_Suffix,&QLineEdit::textChanged,this,&paraDialog::set_dataFileName_Suffix);//后缀名
 	connect(ui->checkBox_channelA,&QCheckBox::clicked,this,&paraDialog::set_channelA);							//通道A
 	connect(ui->checkBox_channelB,&QCheckBox::clicked,this,&paraDialog::set_channelB);							//通道B
+
 	ui->lineEdit_DatafilePath->setReadOnly(true);
 }
 
@@ -77,10 +81,12 @@ void paraDialog::update_show()
 	ui->lineEdit_laserWaveLength->setText(QString::number(psetting.laserWaveLength));
 	ui->lineEdit_AOM_Freq->setText(QString::number(psetting.AOM_Freq));
 
-	//扫描参数
+	//扫描参数——俯仰角
 	ui->lineEdit_elevationAngle->setText(QString::number(psetting.elevationAngle));
+	//扫描参数——方位角
 	ui->lineEdit_start_azAngle->setText(QString::number(psetting.start_azAngle));
 	ui->lineEdit_step_azAngle->setText(QString::number(psetting.step_azAngle));
+	//扫描参数——扫描探测
 	ui->groupBox_2->setEnabled(true);
 	ui->radioButton_anglekey->setChecked(psetting.anglekey);
 	ui->radioButton_circlekey->setChecked(psetting.circlekey);
@@ -97,29 +103,33 @@ void paraDialog::update_show()
 	ui->lineEdit_angleNum->setText(QString::number(psetting.angleNum));
 	ui->lineEdit_circleNum->setText(QString::number(psetting.circleNum));
 	ui->lineEdit_SP->setText(QString::number(psetting.SP));
+	//扫描参数——定时设置
+	ui->lineEdit_direct_interval->setText(QString::number(psetting.direct_intervalTime,'f',2));
+	ui->lineEdit_circle_interval->setText(QString::number(psetting.time_circle_interval,'f',2));
 
 	//采样配置——采集模式
 	ui->radioButton_singleCh->setChecked(psetting.isSingleCh);
 	ui->radioButton_doubleCh->setChecked(!psetting.isSingleCh);
 	//采样配置——触发设置
-	trig_conversion = false;
+	level_conversion = false;
+	Pre_OR_HoldOff_conversion = false;
 	if(psetting.trigger_mode == 3)
 	{
 		ui->comboBox_trig_mode->setCurrentText(QString::fromLocal8Bit("电平触发"));
-		ui->label_level_OR_holdOff->setText(QString::fromLocal8Bit("触发电平"));
-		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigLevel));
-		ui->pushButton_conversion->setText(QString::fromLocal8Bit("LSB"));
+		ui->lineEdit_trigLevel->setText(QString::number(psetting.trigLevel));
+		ui->pushButton_conversion_level->setText(QString::fromLocal8Bit("LSB"));
 	}
 	else
 	{
 		ui->comboBox_trig_mode->setCurrentText(QString::fromLocal8Bit("外部触发"));
-		ui->label_level_OR_holdOff->setText(QString::fromLocal8Bit("触发延迟"));
-		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigHoldOffSamples));
-		ui->pushButton_conversion->setText(QString::fromLocal8Bit("点"));
+		ui->label_level->setEnabled(false);
+		ui->lineEdit_trigLevel->setEnabled(false);
+		ui->pushButton_conversion_level->setEnabled(false);
 	}
-	//采样配置——定时设置
-	ui->lineEdit_direct_interval->setText(QString::number(psetting.direction_intervalTime,'f',2));
-	ui->lineEdit_circle_interval->setText(QString::number(psetting.time_circle_interval,'f',2));
+	ui->radioButton_Pre->setChecked(psetting.isPreTrig);
+	ui->radioButton_holdOff->setChecked(!psetting.isPreTrig);
+	ui->lineEdit_Pre_holdOff->setText(QString::number(psetting.Pre_OR_HoldOff_Samples));
+	ui->pushButton_conversion_holdOff_Pre->setText(QString::fromLocal8Bit("点"));
 	//采样配置——采样参数
 	ui->comboBox_sampleFreq->setCurrentText(QString::number(psetting.sampleFreq));
 	ui->lineEdit_detRange->setText(QString::number(psetting.detRange/1000));
@@ -196,9 +206,9 @@ void paraDialog::set_dect_time()
 					psetting.angleNum*psetting.sampleNum/(psetting.sampleFreq*1000000) +
 					psetting.angleNum*ui->lineEdit_sglfilesize->text().toFloat()/UPLOAD_SPEED;
 	if(psetting.step_azAngle == 0)
-		time_need = time_need + (psetting.angleNum-1)*psetting.direction_intervalTime;
+		time_need = time_need + (psetting.angleNum-1)*psetting.direct_intervalTime;
 	else
-		time_need = time_need + (psetting.angleNum-1)*psetting.direction_intervalTime
+		time_need = time_need + (psetting.angleNum-1)*psetting.direct_intervalTime
 					+ psetting.time_circle_interval*60*psetting.angleNum/(360/psetting.step_azAngle);
 	if(time_need < 1)
 		ui->lineEdit_totalTime->setText("<1s");									//在1s以下
@@ -398,6 +408,18 @@ void paraDialog::set_motorSP()														//电机转速
 	}
 }
 
+void paraDialog::set_time_direct_interval()
+{
+	psetting.direct_intervalTime = ui->lineEdit_direct_interval->text().toFloat();
+	set_dect_time();
+}
+
+void paraDialog::set_time_circle_interval()
+{
+	psetting.time_circle_interval = ui->lineEdit_circle_interval->text().toFloat();
+	set_dect_time();
+}
+
 void paraDialog::set_singleCh()														//单通道 影响触发电平，以及ch1的文件名编辑框、数据量
 {
 	psetting.isSingleCh = true;
@@ -426,72 +448,76 @@ void paraDialog::set_doubleCh()														//双通道 影响触发电平，�
 
 void paraDialog::set_trig_mode()
 {
-	trig_conversion = false;
+	level_conversion = false;
+	Pre_OR_HoldOff_conversion = false;
 	if(ui->comboBox_trig_mode->currentText() == QString::fromLocal8Bit("电平触发"))
 	{
 		psetting.trigger_mode = 3;
-		ui->label_level_OR_holdOff->setText(QString::fromLocal8Bit("触发电平"));
-		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigLevel));
-		ui->pushButton_conversion->setText(QString::fromLocal8Bit("LSB"));
+		ui->label_level->setEnabled(true);
+		ui->lineEdit_trigLevel->setEnabled(true);
+		ui->lineEdit_trigLevel->setText(QString::number(psetting.trigLevel));
+		ui->pushButton_conversion_level->setEnabled(true);
 	}
 	else
 	{
 		psetting.trigger_mode = 2;
-		ui->label_level_OR_holdOff->setText(QString::fromLocal8Bit("触发延迟"));
-		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigHoldOffSamples));
-		ui->pushButton_conversion->setText(QString::fromLocal8Bit("点"));
+		ui->label_level->setEnabled(false);
+		ui->lineEdit_trigLevel->setEnabled(false);
+		ui->pushButton_conversion_level->setEnabled(false);
 	}
+
+	ui->pushButton_conversion_level->setText(QString::fromLocal8Bit("LSB"));
+	ui->radioButton_Pre->setChecked(psetting.isPreTrig);
+	ui->radioButton_holdOff->setChecked(!psetting.isPreTrig);
+	ui->lineEdit_Pre_holdOff->setText(QString::number(psetting.Pre_OR_HoldOff_Samples));
+	ui->pushButton_conversion_holdOff_Pre->setText(QString::fromLocal8Bit("点"));
 }
 
-void paraDialog::set_trigLevel_OR_holdOff()											//psetting获取编辑框值
+void paraDialog::set_trigLevel()													//psetting获取编辑框值
 {
-	if(trig_conversion == false)
+	if(level_conversion == false)
 	{
-		if(psetting.trigger_mode == 3)													//电平触发
+		if((2047 <= ui->lineEdit_trigLevel->text().toInt())||(ui->lineEdit_trigLevel->text().toInt() <= -2048))
 		{
-			if((2047 <= ui->lineEdit_trigLevel_OR_holdOff->text().toInt())||(ui->lineEdit_trigLevel_OR_holdOff->text().toInt() <= -2048))
-			{
-				QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发电平范围为-2048LSB至2047LSB"));
-				ui->lineEdit_trigLevel_OR_holdOff->setText(NULL);
-			}
-			else
-				psetting.trigLevel = ui->lineEdit_trigLevel_OR_holdOff->text().toInt();
+			QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发电平范围为-2048LSB至2047LSB"));
+			ui->lineEdit_trigLevel->setText(NULL);
 		}
-		else																			//外部触发
-			psetting.trigHoldOffSamples = ui->lineEdit_trigLevel_OR_holdOff->text().toInt();
+		else
+			psetting.trigLevel = ui->lineEdit_trigLevel->text().toInt();
 	}
 	else
 	{
-		if(psetting.trigger_mode == 3)
+		if((1099 <= ui->lineEdit_trigLevel->text().toFloat())||(ui->lineEdit_trigLevel->text().toFloat() <= -1100))
 		{
-			if((1099 <= ui->lineEdit_trigLevel_OR_holdOff->text().toFloat())||(ui->lineEdit_trigLevel_OR_holdOff->text().toFloat() <= -1100))
-			{
-				QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发电平范围为-1100mV至1099mV"));
-				ui->lineEdit_trigLevel_OR_holdOff->setText(NULL);
-			}
-			else
-			{
-				if(ui->lineEdit_trigLevel_OR_holdOff->text().toFloat() >= 0)
-					psetting.trigLevel = 2048*ui->lineEdit_trigLevel_OR_holdOff->text().toFloat()/1100 + 0.05;
-				else
-					psetting.trigLevel = 2048*ui->lineEdit_trigLevel_OR_holdOff->text().toFloat()/1100 - 0.05;
-			}
+			QMessageBox::warning(this,QString::fromLocal8Bit("提示"),QString::fromLocal8Bit("触发电平范围为-1100mV至1099mV"));
+			ui->lineEdit_trigLevel->setText(NULL);
 		}
 		else
-			psetting.trigHoldOffSamples = psetting.sampleFreq*ui->lineEdit_trigLevel_OR_holdOff->text().toFloat()/1000 + 0.05;
+		{
+			if(ui->lineEdit_trigLevel->text().toFloat() >= 0)
+				psetting.trigLevel = 2048*ui->lineEdit_trigLevel->text().toFloat()/1100 + 0.05;
+			else
+				psetting.trigLevel = 2048*ui->lineEdit_trigLevel->text().toFloat()/1100 - 0.05;
+		}
 	}
 }
 
-void paraDialog::set_time_direct_interval()
+void paraDialog::set_Pre()
 {
-	psetting.direction_intervalTime = ui->lineEdit_direct_interval->text().toFloat();
-	set_dect_time();
+	psetting.isPreTrig = true;
 }
 
-void paraDialog::set_time_circle_interval()
+void paraDialog::set_HoldOff()
 {
-	psetting.time_circle_interval = ui->lineEdit_circle_interval->text().toFloat();
-	set_dect_time();
+	psetting.isPreTrig = false;
+}
+
+void paraDialog::set_Pre_OR_HoldOff()
+{
+	if(Pre_OR_HoldOff_conversion == false)
+		psetting.Pre_OR_HoldOff_Samples = ui->lineEdit_Pre_holdOff->text().toInt();
+	else
+		psetting.Pre_OR_HoldOff_Samples = psetting.sampleFreq*ui->lineEdit_Pre_holdOff->text().toFloat()/1000 + 0.05;
 }
 
 void paraDialog::set_sampleFreq()													//采样频率 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -502,8 +528,8 @@ void paraDialog::set_sampleFreq()													//采样频率 影响采样点数�
 	ui->lineEdit_sampleNum->setText(QString::number(psetting.sampleNum));			//采样点数
 
 	//外部触发
-	if((psetting.trigger_mode == 2)&&(trig_conversion == true))
-		ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number((float)psetting.trigHoldOffSamples*1000/psetting.sampleFreq,'f',2));
+	if(Pre_OR_HoldOff_conversion == true)
+		ui->lineEdit_Pre_holdOff->setText(QString::number((float)psetting.Pre_OR_HoldOff_Samples*1000/psetting.sampleFreq,'f',2));
 }
 
 void paraDialog::set_detRange()														//探测距离 影响采样点数、单文件量、总数据量//psetting获取编辑框值
@@ -575,36 +601,35 @@ void paraDialog::check_update_SN()
 	}
 }
 
-void paraDialog::on_pushButton_conversion_clicked()
+void paraDialog::on_pushButton_conversion_level_clicked()
 {
-	if(trig_conversion == false)
+	if(level_conversion == false)
 	{
-		trig_conversion = true;
-		if(psetting.trigger_mode == 3)
-		{
-
-			ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number((float)1100*psetting.trigLevel/2048,'f',2));
-			ui->pushButton_conversion->setText(QString::fromLocal8Bit("mV"));
-		}
-		else
-		{
-			ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number((float)1000*psetting.trigHoldOffSamples/psetting.sampleFreq,'f',2));
-			ui->pushButton_conversion->setText(QString::fromLocal8Bit("ns"));
-		}
+		level_conversion = true;
+		ui->lineEdit_trigLevel->setText(QString::number((float)1100*psetting.trigLevel/2048,'f',2));
+		ui->pushButton_conversion_level->setText(QString::fromLocal8Bit("mV"));
 	}
 	else
 	{
-		trig_conversion = false;
-		if(psetting.trigger_mode == 3)
-		{
-			ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigLevel));
-			ui->pushButton_conversion->setText(QString::fromLocal8Bit("LSB"));
-		}
-		else
-		{
-			ui->lineEdit_trigLevel_OR_holdOff->setText(QString::number(psetting.trigHoldOffSamples));
-			ui->pushButton_conversion->setText(QString::fromLocal8Bit("点"));
-		}
+		level_conversion = false;
+		ui->lineEdit_trigLevel->setText(QString::number(psetting.trigLevel));
+		ui->pushButton_conversion_level->setText(QString::fromLocal8Bit("LSB"));
+	}
+}
+
+void paraDialog::on_pushButton_conversion_holdOff_Pre_clicked()
+{
+	if(Pre_OR_HoldOff_conversion == false)
+	{
+		Pre_OR_HoldOff_conversion = true;
+		ui->lineEdit_Pre_holdOff->setText(QString::number((float)1000*psetting.Pre_OR_HoldOff_Samples/psetting.sampleFreq,'f',2));
+		ui->pushButton_conversion_holdOff_Pre->setText(QString::fromLocal8Bit("ns"));
+	}
+	else
+	{
+		Pre_OR_HoldOff_conversion = false;
+		ui->lineEdit_Pre_holdOff->setText(QString::number(psetting.Pre_OR_HoldOff_Samples));
+		ui->pushButton_conversion_holdOff_Pre->setText(QString::fromLocal8Bit("点"));
 	}
 }
 
@@ -613,7 +638,7 @@ void paraDialog::on_pushButton_clicked()
 {
 	int max_plsAcc;
 	if(psetting.trigger_mode == 2)					//外部触发
-		max_plsAcc = (DATA_MEMORY - SIZE_OF_FILE_HEADER)/(psetting.sampleNum*2 + psetting.trigHoldOffSamples*2);
+		max_plsAcc = (DATA_MEMORY - SIZE_OF_FILE_HEADER)/(psetting.sampleNum*2 + psetting.Pre_OR_HoldOff_Samples*2);
 	else											//电平触发
 		max_plsAcc = (DATA_MEMORY - SIZE_OF_FILE_HEADER)/(2*psetting.sampleNum);
 	ui->lineEdit_plsAccNum->setText(QString::number(max_plsAcc));

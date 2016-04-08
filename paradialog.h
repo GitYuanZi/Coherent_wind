@@ -37,21 +37,24 @@ private slots:
 	void set_AOM_Freq();
 
 	void set_elevationAngle();
-	void set_step_azAngle();
-	void set_SP_Interval();
 	void set_start_azAngle();
+	void set_step_azAngle();
 	void set_circleNum();
 	void set_angleNum();
 	void set_anglekey();
 	void set_circlekey();
+	void set_SP_Interval();										//速度和圆周间间隔使能状态
 	void set_motorSP();
+	void set_time_direct_interval();
+	void set_time_circle_interval();
 
 	void set_singleCh();
 	void set_doubleCh();
 	void set_trig_mode();
-	void set_trigLevel_OR_holdOff();
-	void set_time_direct_interval();
-	void set_time_circle_interval();
+	void set_trigLevel();
+	void set_Pre();
+	void set_HoldOff();
+	void set_Pre_OR_HoldOff();
     void set_sampleFreq();
 	void set_detRange();
 	void set_filesize();
@@ -61,7 +64,8 @@ private slots:
 	void set_channelA();
 	void set_channelB();
 
-	void on_pushButton_conversion_clicked();					//单位转换
+	void on_pushButton_conversion_level_clicked();				//电平单位转换
+	void on_pushButton_conversion_holdOff_Pre_clicked();		//预触发或触发延迟单位转换
 	void on_pushButton_clicked();								//单次最大脉冲数
 	void on_pushButton_pathModify_clicked();					//修改路径
 	void on_pushButton_dataFileName_sch_clicked();				//文件后缀名
@@ -80,7 +84,8 @@ private:
 	double direct_size;											//单方向上的数据量
 	int sampleNum;												//单个脉冲的采样点数
 	bool nocollecting;											//是否正在采集数据
-	bool trig_conversion;										//用于触发电平或延迟单位转换
+	bool level_conversion;										//用于触发电平单位转换
+	bool Pre_OR_HoldOff_conversion;								//用于预触发或触发延迟单位转换
 	int Suffix_needLength;										//文件编号所需最小位数
 
 	void update_show();
